@@ -1,20 +1,23 @@
 # astro-research-publications
 
-An Astro integration that fetches your Google Scholar profile at build time and renders a fully-styled publications page — complete with a citation stats sidebar, citations-per-year bar chart, and co-author list.
+An Astro integration that fetches your academic publications at build time from one or more sources and renders a fully-styled publications page — complete with citation stats, a citations-per-year bar chart, and co-author list.
 
-Data is cached locally so repeat builds are fast, and a stale cache is used automatically if Scholar is unreachable.
+Supports **Google Scholar**, **Semantic Scholar**, **OpenAlex**, and **ORCID**. Results from multiple sources are merged and deduplicated automatically.
+
+Data is cached locally so repeat builds are fast, and a stale cache is used if any source is unreachable.
 
 ---
 
 ## Features
 
-- Fetches publications, citation counts, h-index, i10-index, and co-authors directly from Google Scholar
+- Fetches publications, citation counts, h-index, i10-index, and co-authors
+- **Multi-source** — combine Google Scholar, Semantic Scholar, OpenAlex, and/or ORCID; results are merged and deduplicated by title
 - Renders a ready-to-use `<ResearchPublications />` component with a responsive two-column layout
-- Local JSON cache with a configurable max-age (default: 24 hours) — no unnecessary requests on every build
-- Falls back to stale cache if the live fetch fails, so your site never breaks
+- Local JSON cache with configurable max-age (default: 24 h) — no unnecessary requests on every build
+- Falls back to stale cache if a live fetch fails, so your site never breaks
 - CSS custom properties for easy theming — no stylesheet overrides required
-- Full TypeScript types exported for `ScholarData`, `Publication`, `CitationStats`, and more
-- Works with Astro 4 and 5
+- Full TypeScript types exported for `ScholarData`, `Publication`, `CitationStats`, `SourceConfig`, and more
+- Works with Astro 4, 5 and 6
 
 ---
 
@@ -28,24 +31,25 @@ npm install astro-research-publications
 
 ## Quick Start
 
-**1. Add the integration to `astro.config.mjs`:**
+### Google Scholar only (default)
 
 ```js
+// astro.config.mjs
 import { defineConfig } from 'astro/config';
 import researchPublications from 'astro-research-publications';
 
 export default defineConfig({
   integrations: [
     researchPublications({
-      scholarId: 'YOUR_SCHOLAR_ID', // the `user=` param from your Scholar profile URL
+      scholarId: 'YOUR_SCHOLAR_ID',
     }),
   ],
 });
 ```
 
-Your Scholar ID is the value of the `user=` query parameter in your Google Scholar profile URL, e.g. `https://scholar.google.com/citations?user=XXXXXXXX`.
+Your Scholar ID is the `user=` value in your Google Scholar profile URL, e.g. `https://scholar.google.com/citations?user=XXXXXXXX`.
 
-**2. Drop the component into any page:**
+Drop the component into any page:
 
 ```astro
 ---
@@ -55,61 +59,128 @@ import ResearchPublications from 'astro-research-publications/components';
 <ResearchPublications />
 ```
 
-That's it. The component fetches data at build time and renders everything inline — no client-side JavaScript required.
+That's it — no client-side JavaScript required.
+
+---
+
+## Multi-source
+
+Use the `sources` array to pull from multiple platforms. Results are merged by normalised title: citation counts, DOIs, abstracts, and author lists are combined across sources.
+
+```js
+// astro.config.mjs
+researchPublications({
+  sources: [
+    { type: 'google-scholar',    profileId: 'YOUR_SCHOLAR_ID' },
+    { type: 'semantic-scholar',  authorId:  'YOUR_S2_AUTHOR_ID' },
+    { type: 'open-alex',         authorId:  'YOUR_OPENALEX_ID' },
+    { type: 'orcid',             orcidId:   '0000-0000-0000-0000' },
+  ],
+})
+```
+
+You can use any combination — a single source, two sources, or all four.
+
+### Finding your IDs
+
+| Source | Where to find your ID |
+|---|---|
+| **Google Scholar** | `user=` param in your Scholar profile URL |
+| **Semantic Scholar** | Visit `semanticscholar.org/author/YOUR-NAME` — the number in the URL |
+| **OpenAlex** | Visit `openalex.org/authors?search=YOUR-NAME` — the `A…` ID |
+| **ORCID** | Your 16-digit ORCID iD, e.g. `0000-0002-1825-0097` |
+
+### Merge behaviour
+
+| Field | Strategy |
+|---|---|
+| Citations | Take the highest count across sources |
+| DOI | Fill from any source that has it |
+| Abstract | Fill from any source that has it |
+| Authors | Fill from any source that has a non-empty list |
+| Citation stats (h-index, etc.) | Google Scholar first, then other sources, then computed from merged papers |
+| Citations per year | Google Scholar only |
+| `pub.sources[]` | Lists every source that contributed the entry |
+
+---
+
+## Real-world example — gkanev.com
+
+This is how the publications page at [gkanev.com/publications](https://gkanev.com/publications) uses the plugin.
+
+```js
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import researchPublications from 'astro-research-publications';
+
+export default defineConfig({
+  integrations: [
+    researchPublications({
+      sources: [
+        { type: 'google-scholar',   profileId: 'GkxQpQoAAAAJ' },
+        { type: 'semantic-scholar', authorId:  '2109234683'    },
+        { type: 'open-alex',        authorId:  'A5012823189'   },
+      ],
+      cacheMaxAgeMs: 12 * 60 * 60 * 1000, // rebuild cache every 12 h
+    }),
+  ],
+});
+```
+
+```astro
+---
+// src/pages/publications.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ResearchPublications from 'astro-research-publications/components';
+---
+
+<BaseLayout title="Publications" description="Academic publications by Gabriel Kanev">
+  <ResearchPublications />
+</BaseLayout>
+```
 
 ---
 
 ## Configuration
 
-All options are passed to the integration in `astro.config.mjs`.
-
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `scholarId` | `string` | — | **Required.** Your Google Scholar profile ID. |
-| `cacheMaxAgeMs` | `number` | `86400000` (24 h) | How long cached data is considered fresh before a new fetch is attempted. |
+| `scholarId` | `string` | — | Google Scholar profile ID. Shorthand for `sources: [{ type: 'google-scholar', profileId }]`. Ignored when `sources` is set. |
+| `sources` | `SourceConfig[]` | — | One or more data sources (see above). Takes precedence over `scholarId`. |
+| `cacheMaxAgeMs` | `number` | `86400000` (24 h) | How long cached data is considered fresh. |
 | `cachePath` | `string` | `.scholar-cache.json` | Path to the cache file, relative to the project root. |
-
-```js
-researchPublications({
-  scholarId: 'YOUR_SCHOLAR_ID',
-  cacheMaxAgeMs: 12 * 60 * 60 * 1000, // 12 hours
-  cachePath: '.cache/scholar.json',
-})
-```
 
 ---
 
 ## CSS Theming
 
-The component uses CSS custom properties for all colours. Override them anywhere in your stylesheet to match your site's design:
+The component uses CSS custom properties for all colours:
 
 ```css
 :root {
-  --rp-text: #1a1a1a;             /* Primary text */
-  --rp-text-secondary: #888;      /* Muted text (venue, year, sync timestamp) */
-  --rp-border: #e5e5e5;           /* Dividers and card borders */
-  --rp-accent: #d8613c;           /* Links on hover, highlighted values */
-  --rp-chart-bar: #d8613c;        /* Citations-per-year bar fill */
+  --rp-text:           #1a1a1a;  /* Primary text */
+  --rp-text-secondary: #888;     /* Muted text (venue, year, sync timestamp) */
+  --rp-border:         #e5e5e5;  /* Dividers and card borders */
+  --rp-accent:         #d8613c;  /* Links on hover, highlighted values */
+  --rp-chart-bar:      #d8613c;  /* Citations-per-year bar fill */
 }
 ```
 
-All properties have sensible fallback values, so you only need to set the ones you want to change.
+All properties have sensible fallback values — only override what you need.
 
 ---
 
 ## Auto-sync
 
-To keep publications up to date without manual deploys, add a scheduled GitHub Actions workflow that triggers a rebuild on your hosting platform (Netlify, Vercel, Cloudflare Pages, etc.) on a regular cadence — daily is usually enough. Because the integration writes a cache file to the repo, you can also commit the cache and only rebuild when it changes.
-
-A minimal example that runs every day at 06:00 UTC:
+To keep publications up to date without manual deploys, add a scheduled GitHub Actions workflow that triggers a rebuild on your hosting platform. A minimal daily workflow:
 
 ```yaml
 # .github/workflows/sync-scholar.yml
-name: Sync Scholar data
+name: Sync publications
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 6 * * *'   # every day at 06:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -129,17 +200,35 @@ jobs:
 
 ## TypeScript
 
-The integration exposes data through the `virtual:scholar-data` module. To get full type support in `.astro` and `.ts` files, add a reference to the package's virtual module declaration in your project's `src/env.d.ts`:
+Add a reference to the virtual module declaration in `src/env.d.ts` for full type support:
 
 ```ts
 /// <reference types="astro/client" />
 /// <reference path="../node_modules/astro-research-publications/src/virtual.d.ts" />
 ```
 
-After this, `import data from 'virtual:scholar-data'` will be fully typed as `ScholarData`.
+After this, `import data from 'virtual:scholar-data'` is fully typed as `ScholarData`.
 
-You can also import the types directly from the package:
+Import types directly:
 
 ```ts
-import type { ScholarData, Publication, CitationStats, CoAuthor } from 'astro-research-publications';
+import type { ScholarData, Publication, CitationStats, CoAuthor, SourceConfig } from 'astro-research-publications';
 ```
+
+---
+
+## Source comparison
+
+| | Google Scholar | Semantic Scholar | OpenAlex | ORCID |
+|---|---|---|---|---|
+| API type | Scraping | REST API | REST API | REST API |
+| Auth required | No | No (optional key for higher rate limits) | No | No |
+| Citation counts | ✓ | ✓ | ✓ | — |
+| h-index / i10 | ✓ | ✓ (h-index) | ✓ | — |
+| Citations per year | ✓ | — | — | — |
+| DOI | — | ✓ | ✓ | ✓ |
+| Abstracts | — | ✓ | ✓ | — |
+| Co-authors | ✓ | — | — | — |
+| CAPTCHA risk | Yes | No | No | No |
+
+For maximum data richness and reliability, combining Google Scholar with Semantic Scholar or OpenAlex is recommended.
