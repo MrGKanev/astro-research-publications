@@ -1,0 +1,56 @@
+# scholar-sync.yml
+#
+# Triggers a Vercel or Netlify deploy hook on a schedule so your site
+# rebuilds automatically and picks up the latest Google Scholar data.
+#
+# HOW IT WORKS
+# ------------
+# This workflow does NOT fetch Scholar data itself. The
+# astro-research-publications integration fetches live data from Google
+# Scholar at build time. All this workflow does is ping a deploy hook URL
+# so that your hosting provider triggers a fresh build.
+#
+# SETUP
+# -----
+# 1. Create a deploy hook in your hosting dashboard:
+#    - Vercel:  Project → Settings → Git → Deploy Hooks
+#    - Netlify: Site → Site configuration → Build & deploy → Build hooks
+#
+# 2. Copy the hook URL and add it as a repository secret named
+#    DEPLOY_HOOK_URL:
+#    GitHub repo → Settings → Secrets and variables → Actions → New secret
+#
+# 3. Copy this file into YOUR repo at:
+#    .github/workflows/scholar-sync.yml
+#
+# CUSTOMISATION
+# -------------
+# - Change the cron schedule below (default: every Monday at 06:00 UTC).
+#   Use https://crontab.guru to build expressions.
+# - You can rename DEPLOY_HOOK_URL to whatever secret name you prefer —
+#   just update the reference in the curl step as well.
+
+name: Scholar Sync
+
+on:
+  # Run on a schedule — default is every Monday at 06:00 UTC.
+  # Adjust the cron expression to suit your update frequency.
+  schedule:
+    - cron: '0 6 * * 1'
+
+  # Allow triggering manually from the GitHub Actions UI at any time.
+  workflow_dispatch:
+
+jobs:
+  trigger-deploy:
+    name: Trigger deploy hook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping deploy hook
+        # Sends a POST request to the deploy hook URL stored in the secret.
+        # The hosting provider (Vercel/Netlify) will queue a new build, which
+        # causes the integration to re-fetch Google Scholar and rebuild the page.
+        run: |
+          curl -s -o /dev/null -w "HTTP status: %{http_code}\n" \
+            -X POST "${{ secrets.DEPLOY_HOOK_URL }}"
