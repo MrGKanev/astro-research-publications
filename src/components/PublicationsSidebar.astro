@@ -1,0 +1,139 @@
+---
+import type { CitationStats, CoAuthor } from '../types.js';
+import CitationsChart from './CitationsChart.astro';
+
+interface Props {
+  stats: CitationStats;
+  coAuthors: CoAuthor[];
+  citationsByYear?: Record<string, number> | null;
+}
+
+const { stats, coAuthors, citationsByYear } = Astro.props;
+---
+
+<div class="rp-sidebar-inner">
+  <!-- Citations card -->
+  <div class="rp-card">
+    <h3 class="rp-card-title">Cited by</h3>
+    <table class="rp-stats-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="rp-stats-th">All</th>
+          <th class="rp-stats-th">Since {stats.sinceYear}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="rp-stats-label">Citations</td>
+          <td class="rp-stats-val">{stats.totalCitations}</td>
+          <td class="rp-stats-val">{stats.totalCitationsSince}</td>
+        </tr>
+        <tr>
+          <td class="rp-stats-label">h-index</td>
+          <td class="rp-stats-val">{stats.hIndex}</td>
+          <td class="rp-stats-val">{stats.hIndexSince}</td>
+        </tr>
+        <tr>
+          <td class="rp-stats-label">i10-index</td>
+          <td class="rp-stats-val">{stats.i10Index}</td>
+          <td class="rp-stats-val">{stats.i10IndexSince}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <CitationsChart citationsByYear={citationsByYear} />
+  </div>
+
+  <!-- Co-authors card -->
+  {coAuthors.length > 0 && (
+    <div class="rp-card">
+      <h3 class="rp-card-title">
+        Co-authors
+        <span class="rp-card-count">{coAuthors.length}</span>
+      </h3>
+      <ul class="rp-coauthors">
+        {coAuthors.map((author) => (
+          <li class="rp-coauthor">
+            <a
+              href={author.scholarUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="rp-coauthor-name"
+            >
+              {author.name}
+            </a>
+            {author.affiliation && (
+              <span class="rp-coauthor-affiliation">{author.affiliation}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
+
+<style>
+  .rp-sidebar-inner { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  .rp-card {
+    border: 1px solid var(--rp-border, #e5e5e5);
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+  }
+
+  .rp-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--rp-text-secondary, #666);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .rp-card-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    background: var(--rp-border, #e5e5e5);
+    color: var(--rp-text-secondary, #666);
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    font-weight: 600;
+  }
+
+  .rp-stats-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+
+  .rp-stats-th {
+    text-align: right;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--rp-text-secondary, #888);
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--rp-border, #e5e5e5);
+  }
+
+  .rp-stats-label { color: var(--rp-text-secondary, #555); padding: 0.3rem 0; font-size: 0.82rem; }
+
+  .rp-stats-val {
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--rp-text, #111);
+    padding: 0.3rem 0 0.3rem 1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rp-coauthors { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .rp-coauthor { display: flex; flex-direction: column; gap: 0.1rem; }
+
+  .rp-coauthor-name { font-size: 0.85rem; font-weight: 500; color: var(--rp-text, #111); text-decoration: none; }
+  .rp-coauthor-name:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
+
+  .rp-coauthor-affiliation { font-size: 0.75rem; color: var(--rp-text-secondary, #888); }
+</style>

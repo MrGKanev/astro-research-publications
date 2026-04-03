@@ -1,0 +1,130 @@
+---
+interface Props {
+  citationsByYear?: Record<string, number> | null;
+}
+
+const { citationsByYear } = Astro.props;
+
+const entries = Object.entries(citationsByYear ?? {})
+  .map(([year, count]) => ({ year, count }))
+  .sort((a, b) => Number(a.year) - Number(b.year));
+
+const maxCount = Math.max(...entries.map(e => e.count), 1);
+
+function niceStep(max: number): number {
+  const raw = max / 3;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+  const normalized = raw / magnitude;
+  const nice = normalized < 1.5 ? 1 : normalized < 3.5 ? 2 : normalized < 7.5 ? 5 : 10;
+  return nice * magnitude;
+}
+
+const step = niceStep(maxCount);
+const gridMax = Math.ceil(maxCount / step) * step;
+const gridLines = Array.from({ length: Math.floor(gridMax / step) + 1 }, (_, i) => i * step).reverse();
+---
+
+{entries.length > 0 && (
+  <div class="chart-wrap">
+    <div class="chart">
+      <div class="chart-grid">
+        {gridLines.map(val => (
+          <div class="chart-grid-line" style={`bottom: ${(val / gridMax) * 100}%`}>
+            <span class="chart-grid-label">{val}</span>
+          </div>
+        ))}
+      </div>
+
+      <div class="chart-bars">
+        {entries.map(({ year, count }) => (
+          <div class="chart-bar-col">
+            <div
+              class="chart-bar"
+              style={`height: ${(count / gridMax) * 100}%`}
+              title={`${year}: ${count} citation${count !== 1 ? 's' : ''}`}
+            />
+            <span class="chart-bar-label">{year}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  .chart-wrap {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rp-border, #e5e5e5);
+  }
+
+  .chart {
+    position: relative;
+    height: 90px;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .chart-grid-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px solid var(--rp-border, #e5e5e5);
+    display: flex;
+    justify-content: flex-end;
+    transform: translateY(-50%);
+  }
+
+  .chart-grid-label {
+    font-size: 0.65rem;
+    color: var(--rp-text-secondary, #999);
+    line-height: 1;
+    padding-left: 4px;
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+
+  .chart-bars {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    padding-right: 2rem;
+  }
+
+  .chart-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    position: relative;
+  }
+
+  .chart-bar {
+    width: 100%;
+    background: var(--rp-chart-bar, #999);
+    border-radius: 1px 1px 0 0;
+    min-height: 2px;
+    transition: background 0.15s;
+  }
+
+  .chart-bar-col:hover .chart-bar {
+    background: var(--rp-accent, #d8613c);
+  }
+
+  .chart-bar-label {
+    position: absolute;
+    bottom: -1.25rem;
+    font-size: 0.65rem;
+    color: var(--rp-text-secondary, #888);
+    white-space: nowrap;
+  }
+</style>

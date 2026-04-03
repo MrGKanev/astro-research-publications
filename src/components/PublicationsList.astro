@@ -1,0 +1,120 @@
+---
+import type { Publication } from '../types.js';
+
+interface Props {
+  publications: Publication[];
+}
+
+const { publications } = Astro.props;
+---
+
+<div class="rp-publications">
+  <table class="rp-table">
+    <thead>
+      <tr>
+        <th class="rp-th rp-th-num">#</th>
+        <th class="rp-th rp-th-title">Title</th>
+        <th class="rp-th rp-th-year">Year</th>
+        <th class="rp-th rp-th-cited">Cited by</th>
+      </tr>
+    </thead>
+    <tbody>
+      {publications.map((pub, i) => (
+        <tr class="rp-row">
+          <td class="rp-td rp-td-num">{i + 1}</td>
+          <td class="rp-td rp-td-title">
+            <a href={pub.scholarUrl} target="_blank" rel="noopener noreferrer" class="rp-title-link">
+              {pub.title}
+            </a>
+            <div class="rp-authors">{pub.authors.join(', ')}</div>
+            {pub.venue && <div class="rp-venue">{pub.venue}</div>}
+          </td>
+          <td class="rp-td rp-td-center">{pub.year ?? '—'}</td>
+          <td class="rp-td rp-td-center">
+            {pub.citations > 0 ? (
+              pub.citationsUrl ? (
+                <a href={pub.citationsUrl} target="_blank" rel="noopener noreferrer" class="rp-citations-link">
+                  {pub.citations}
+                </a>
+              ) : (
+                <span class="rp-citations-num">{pub.citations}</span>
+              )
+            ) : (
+              <span class="rp-no-citations">—</span>
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .rp-publications { width: 100%; overflow-x: auto; }
+
+  .rp-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+  .rp-th {
+    padding: 0.5rem 0.6rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--rp-text-secondary, #666);
+    border-bottom: 2px solid var(--rp-border, #e5e5e5);
+    white-space: nowrap;
+  }
+
+  .rp-th-num { width: 2rem; text-align: center; }
+  .rp-th-title { }
+  .rp-th-year, .rp-th-cited { width: 5rem; text-align: center; }
+
+  .rp-row:hover .rp-td { background: var(--rp-row-hover, rgba(0,0,0,0.02)); }
+
+  .rp-td {
+    padding: 0.85rem 0.6rem;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rp-border, #e5e5e5);
+    transition: background 0.1s;
+  }
+
+  .rp-td-num {
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.75rem;
+    color: var(--rp-text-secondary, #999);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rp-td-center {
+    text-align: center;
+    vertical-align: middle;
+    color: var(--rp-text-secondary, #666);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rp-title-link {
+    display: block;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--rp-text, #111);
+    text-decoration: none;
+    line-height: 1.4;
+    margin-bottom: 0.2rem;
+  }
+  .rp-title-link:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
+
+  .rp-authors { font-size: 0.78rem; color: var(--rp-text-secondary, #666); margin-bottom: 0.1rem; }
+  .rp-venue { font-size: 0.75rem; color: var(--rp-text-secondary, #888); font-style: italic; }
+
+  .rp-citations-link, .rp-citations-num {
+    color: var(--rp-accent, #d8613c);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  .rp-citations-link:hover { text-decoration: underline; }
+  .rp-no-citations { color: var(--rp-text-muted, #bbb); }
+</style>

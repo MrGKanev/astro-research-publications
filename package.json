@@ -1,0 +1,27 @@
+{
+  "name": "astro-research-publications",
+  "version": "0.1.0",
+  "description": "Astro integration that syncs your Google Scholar profile and renders a publications page.",
+  "type": "module",
+  "author": "Gabriel Kanev",
+  "license": "MIT",
+  "keywords": ["astro", "astro-integration", "google-scholar", "publications", "research", "academic"],
+  "exports": {
+    ".": "./src/index.ts",
+    "./components": "./src/components/ResearchPublications.astro",
+    "./virtual": "./src/virtual.d.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "astro": "^4.0.0 || ^5.0.0"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  },
+  "devDependencies": {
+    "astro": "^4.16.19",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,57 @@
+---
+import type { ScholarData } from '../types.js';
+import PublicationsList from './PublicationsList.astro';
+import PublicationsSidebar from './PublicationsSidebar.astro';
+import data from 'virtual:scholar-data';
+
+const scholarData = data as ScholarData;
+
+const synced = new Date(scholarData.lastSynced).toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+---
+
+<div class="rp-root">
+  <div class="rp-layout">
+    <main class="rp-main">
+      <PublicationsList publications={scholarData.publications} />
+      <p class="rp-synced">
+        Last synced from <a
+          href={`https://scholar.google.com/citations?user=${scholarData.profileId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >Google Scholar</a> on {synced}
+      </p>
+    </main>
+
+    <aside class="rp-sidebar">
+      <PublicationsSidebar
+        stats={scholarData.stats}
+        coAuthors={scholarData.coAuthors}
+        citationsByYear={scholarData.citationsByYear}
+      />
+    </aside>
+  </div>
+</div>
+
+<style>
+  .rp-layout {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .rp-layout { grid-template-columns: 1fr; }
+    .rp-sidebar { order: -1; }
+  }
+
+  .rp-synced {
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--rp-text-secondary, #888);
+  }
+  .rp-synced a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .rp-synced a:hover { color: var(--rp-accent, #d8613c); }
+</style>
