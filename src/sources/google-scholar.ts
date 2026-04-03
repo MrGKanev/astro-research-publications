@@ -73,7 +73,7 @@ function parseStats($: cheerio.CheerioAPI): CitationStats {
 function parseCitationsByYear($: cheerio.CheerioAPI): Record<string, number> {
   const result: Record<string, number> = {};
   const years: string[] = [];
-  $('.gsc_g_t').each((_, el) => years.push($(el).text().trim()));
+  $('.gsc_g_t').each((_, el) => { years.push($(el).text().trim()); });
   const counts: number[] = [];
   $('.gsc_g_a').each((_, el) => {
     const countText = $(el).find('.gsc_g_al').text().trim();

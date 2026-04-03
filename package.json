@@ -1,26 +1,52 @@
 {
   "name": "astro-research-publications",
   "version": "0.1.0",
-  "description": "Astro integration that syncs your Google Scholar profile and renders a publications page.",
+  "description": "Astro integration that syncs your academic publications from Google Scholar, Semantic Scholar, OpenAlex, and/or ORCID and renders a publications page.",
   "type": "module",
   "author": "Gabriel Kanev",
   "license": "MIT",
-  "keywords": ["astro", "astro-integration", "google-scholar", "publications", "research", "academic"],
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "google-scholar",
+    "semantic-scholar",
+    "open-alex",
+    "orcid",
+    "publications",
+    "research",
+    "academic",
+    "citations"
+  ],
+  "files": [
+    "dist",
+    "src/components",
+    "src/virtual.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./components": "./src/components/ResearchPublications.astro",
     "./virtual": "./src/virtual.d.ts"
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run typecheck"
   },
   "peerDependencies": {
-    "astro": "^4.0.0 || ^5.0.0"
+    "astro": "^4.0.0 || ^5.0.0 || ^6.0.0"
   },
   "dependencies": {
     "cheerio": "^1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.5.1",
     "astro": "^4.16.19",
     "typescript": "^5.0.0"
   }

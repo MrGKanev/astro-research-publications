@@ -45,11 +45,11 @@ export async function fetchOrcid(orcidId: string): Promise<SourceResult> {
   const family = record.person?.name?.['family-name']?.value ?? '';
   const profileName = [given, family].filter(Boolean).join(' ') || orcidId;
 
-  const publications: Publication[] = (worksData.group ?? []).map((group) => {
+  const publications: Publication[] = (worksData.group ?? []).flatMap((group): Publication[] => {
     // Take the first work-summary in the group (they are duplicates across sources)
     const summary = group['work-summary'][0];
     const title = summary?.title?.title?.value ?? '';
-    if (!title) return null;
+    if (!title) return [];
 
     const yearStr = summary?.['publication-date']?.year?.value;
     const year = yearStr ? parseInt(yearStr, 10) : null;
@@ -62,7 +62,7 @@ export async function fetchOrcid(orcidId: string): Promise<SourceResult> {
 
     const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
 
-    return {
+    return [{
       id,
       title,
       authors: [],   // ORCID works summary doesn't include co-author list
@@ -74,8 +74,8 @@ export async function fetchOrcid(orcidId: string): Promise<SourceResult> {
       doi,
       abstract: null,
       sources: ['orcid'],
-    } satisfies Publication;
-  }).filter((p): p is Publication => p !== null);
+    }];
+  });
 
   return {
     sourceName: 'orcid',
