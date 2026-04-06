@@ -14,7 +14,7 @@ const HEADERS: Record<string, string> = {
 
 async function fetchPage(url: string): Promise<string> {
   const res = await fetch(url, { headers: HEADERS });
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${url}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} - ${url}`);
   return res.text();
 }
 

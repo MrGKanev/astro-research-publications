@@ -27,7 +27,7 @@ async function fetchJSON<T>(url: string, apiKey?: string): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (apiKey) headers['x-api-key'] = apiKey;
   const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`Semantic Scholar HTTP ${res.status} — ${url}`);
+  if (!res.ok) throw new Error(`Semantic Scholar HTTP ${res.status} - ${url}`);
   return res.json() as Promise<T>;
 }
 

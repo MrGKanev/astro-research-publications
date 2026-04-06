@@ -31,7 +31,7 @@ interface OrcidRecord {
 
 async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`ORCID HTTP ${res.status} — ${url}`);
+  if (!res.ok) throw new Error(`ORCID HTTP ${res.status} - ${url}`);
   return res.json() as Promise<T>;
 }
 

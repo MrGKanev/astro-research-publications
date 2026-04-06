@@ -73,21 +73,23 @@ const gridLines = Array.from({ length: Math.floor(gridMax / step) + 1 }, (_, i) 
 
   .chart-grid-line {
     position: absolute;
-    left: 0;
+    left: 2rem;
     right: 0;
     border-top: 1px solid var(--rp-border, #e5e5e5);
-    display: flex;
-    justify-content: flex-end;
     transform: translateY(-50%);
   }
 
   .chart-grid-label {
+    position: absolute;
+    right: calc(100% + 3px);
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 0.65rem;
     color: var(--rp-text-secondary, #999);
     line-height: 1;
-    padding-left: 4px;
-    transform: translateY(-50%);
     white-space: nowrap;
+    text-align: right;
+    width: 1.8rem;
   }
 
   .chart-bars {
@@ -96,7 +98,7 @@ const gridLines = Array.from({ length: Math.floor(gridMax / step) + 1 }, (_, i) 
     display: flex;
     align-items: stretch;
     gap: 3px;
-    padding-right: 2rem;
+    padding-left: 2rem;
   }
 
   .chart-bar-col {
@@ -128,6 +130,8 @@ const gridLines = Array.from({ length: Math.floor(gridMax / step) + 1 }, (_, i) 
   .chart-bar-label {
     position: absolute;
     bottom: -1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 0.65rem;
     color: var(--rp-text-secondary, #888);
     white-space: nowrap;

@@ -33,7 +33,7 @@ export async function fetchPublications(sources: SourceConfig[]): Promise<Schola
   return mergeResults(results, deriveProfileId(sources));
 }
 
-// Legacy export — kept for backwards compatibility
+// Legacy export - kept for backwards compatibility
 export async function fetchScholarProfile(profileId: string): Promise<ScholarData> {
   return fetchPublications([{ type: 'google-scholar', profileId }]);
 }

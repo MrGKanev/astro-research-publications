@@ -26,10 +26,21 @@ const { publications } = Astro.props;
             <a href={pub.scholarUrl} target="_blank" rel="noopener noreferrer" class="rp-title-link">
               {pub.title}
             </a>
-            <div class="rp-authors">{pub.authors.join(', ')}</div>
+            <div class="rp-authors">
+              {pub.authors.map((author, idx) => (
+                <>
+                  <a
+                    href={`https://scholar.google.com/scholar?q=author%3A%22${encodeURIComponent(author)}%22`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="rp-author-link"
+                  >{author}</a>{idx < pub.authors.length - 1 ? ', ' : ''}
+                </>
+              ))}
+            </div>
             {pub.venue && <div class="rp-venue">{pub.venue}</div>}
           </td>
-          <td class="rp-td rp-td-center">{pub.year ?? '—'}</td>
+          <td class="rp-td rp-td-center">{pub.year ?? '-'}</td>
           <td class="rp-td rp-td-center">
             {pub.citations > 0 ? (
               pub.citationsUrl ? (
@@ -40,7 +51,7 @@ const { publications } = Astro.props;
                 <span class="rp-citations-num">{pub.citations}</span>
               )
             ) : (
-              <span class="rp-no-citations">—</span>
+              <span class="rp-no-citations">-</span>
             )}
           </td>
         </tr>
@@ -107,6 +118,8 @@ const { publications } = Astro.props;
   .rp-title-link:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
 
   .rp-authors { font-size: 0.78rem; color: var(--rp-text-secondary, #666); margin-bottom: 0.1rem; }
+  .rp-author-link { color: inherit; text-decoration: none; }
+  .rp-author-link:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
   .rp-venue { font-size: 0.75rem; color: var(--rp-text-secondary, #888); font-style: italic; }
 
   .rp-citations-link, .rp-citations-num {

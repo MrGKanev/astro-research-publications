@@ -27,13 +27,13 @@
 # -------------
 # - Change the cron schedule below (default: every Monday at 06:00 UTC).
 #   Use https://crontab.guru to build expressions.
-# - You can rename DEPLOY_HOOK_URL to whatever secret name you prefer —
+# - You can rename DEPLOY_HOOK_URL to whatever secret name you prefer -
 #   just update the reference in the curl step as well.
 
 name: Scholar Sync
 
 on:
-  # Run on a schedule — default is every Monday at 06:00 UTC.
+  # Run on a schedule - default is every Monday at 06:00 UTC.
   # Adjust the cron expression to suit your update frequency.
   schedule:
     - cron: '0 6 * * 1'

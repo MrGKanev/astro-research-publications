@@ -1,6 +1,6 @@
 {
   "name": "astro-research-publications",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Astro integration that syncs your academic publications from Google Scholar, Semantic Scholar, OpenAlex, and/or ORCID and renders a publications page.",
   "type": "module",
   "author": "Gabriel Kanev",

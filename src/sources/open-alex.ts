@@ -2,7 +2,7 @@ import type { Publication, SourceResult } from '../types.js';
 
 const BASE = 'https://api.openalex.org';
 
-// Use polite pool by adding mailto — no key required
+// Use polite pool by adding mailto - no key required
 const MAILTO = 'astro-research-publications@example.com';
 
 interface OAWork {
@@ -31,7 +31,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(`${url}${separator}mailto=${MAILTO}`, {
     headers: { Accept: 'application/json' },
   });
-  if (!res.ok) throw new Error(`OpenAlex HTTP ${res.status} — ${url}`);
+  if (!res.ok) throw new Error(`OpenAlex HTTP ${res.status} - ${url}`);
   return res.json() as Promise<T>;
 }
 
