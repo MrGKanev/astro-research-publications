@@ -118,6 +118,13 @@ export async function fetchGoogleScholar(profileId: string): Promise<SourceResul
   const profileName = $('#gsc_prf_in').text().trim() || profileId;
   let publications = parsePublications($);
 
+  if (publications.length === 0 && $('#gsc_a_b').length === 0) {
+    throw new Error(
+      `[astro-research-publications] Google Scholar returned a page with no publications table for profile "${profileId}". ` +
+      'The page structure may have changed, or the profile ID is incorrect.',
+    );
+  }
+
   const hasMore = $('#gsc_bpf_more').length > 0 && !$('#gsc_bpf_more').prop('disabled');
   if (hasMore) {
     const BATCH = 5;

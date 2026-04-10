@@ -12,7 +12,7 @@ async function fetchSource(source: SourceConfig): Promise<SourceResult> {
     case 'semantic-scholar':
       return fetchSemanticScholar(source.authorId, source.apiKey);
     case 'open-alex':
-      return fetchOpenAlex(source.authorId);
+      return fetchOpenAlex(source.authorId, source.mailto);
     case 'orcid':
       return fetchOrcid(source.orcidId);
   }

@@ -29,12 +29,16 @@ const { publications } = Astro.props;
             <div class="rp-authors">
               {pub.authors.map((author, idx) => (
                 <>
-                  <a
-                    href={`https://scholar.google.com/scholar?q=author%3A%22${encodeURIComponent(author)}%22`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="rp-author-link"
-                  >{author}</a>{idx < pub.authors.length - 1 ? ', ' : ''}
+                  {pub.sources?.includes('google-scholar') ? (
+                    <a
+                      href={`https://scholar.google.com/scholar?q=author%3A%22${encodeURIComponent(author)}%22`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="rp-author-link"
+                    >{author}</a>
+                  ) : (
+                    <span class="rp-author-link">{author}</span>
+                  )}{idx < pub.authors.length - 1 ? ', ' : ''}
                 </>
               ))}
             </div>

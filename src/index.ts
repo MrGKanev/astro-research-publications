@@ -27,7 +27,7 @@ function describeSource(source: SourceConfig): string {
 export default function researchPublications(options: ResearchPublicationsOptions): AstroIntegration {
   const {
     cacheMaxAgeMs = DEFAULT_CACHE_MAX_AGE_MS,
-    cachePath: cachePathOption = '.scholar-cache.json',
+    cachePath: cachePathOption = '.astro/scholar-cache.json',
   } = options;
 
   const sources = resolveSources(options);

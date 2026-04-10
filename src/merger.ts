@@ -26,7 +26,7 @@ function normaliseTitle(title: string): string {
 }
 
 /** Compute h-index from a sorted (desc) list of citation counts */
-function computeHIndex(counts: number[]): number {
+export function computeHIndex(counts: number[]): number {
   const sorted = [...counts].sort((a, b) => b - a);
   let h = 0;
   for (let i = 0; i < sorted.length; i++) {
@@ -37,7 +37,7 @@ function computeHIndex(counts: number[]): number {
 }
 
 /** Compute i10-index: number of publications with at least 10 citations */
-function computeI10Index(counts: number[]): number {
+export function computeI10Index(counts: number[]): number {
   return counts.filter((c) => c >= 10).length;
 }
 

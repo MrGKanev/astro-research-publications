@@ -38,18 +38,27 @@ export async function fetchSemanticScholar(authorId: string, apiKey?: string): P
     apiKey,
   );
 
-  // Fetch all papers with pagination
-  let papers: SSPaper[] = [];
-  let offset = 0;
+  // Fetch all papers — first page gives us `total` so remaining pages load in parallel
   const limit = 1000;
-  while (true) {
-    const page = await fetchJSON<{ data: SSPaper[]; next?: number }>(
-      `${BASE}/author/${authorId}/papers?fields=${PAPER_FIELDS}&limit=${limit}&offset=${offset}`,
-      apiKey,
+  const firstPage = await fetchJSON<{ data: SSPaper[]; total?: number; next?: number }>(
+    `${BASE}/author/${authorId}/papers?fields=${PAPER_FIELDS}&limit=${limit}&offset=0`,
+    apiKey,
+  );
+  let papers: SSPaper[] = firstPage.data ?? [];
+  const total = firstPage.total ?? papers.length;
+
+  if (total > limit) {
+    const offsets: number[] = [];
+    for (let o = limit; o < total; o += limit) offsets.push(o);
+    const remaining = await Promise.all(
+      offsets.map((o) =>
+        fetchJSON<{ data: SSPaper[] }>(
+          `${BASE}/author/${authorId}/papers?fields=${PAPER_FIELDS}&limit=${limit}&offset=${o}`,
+          apiKey,
+        ),
+      ),
     );
-    papers = papers.concat(page.data ?? []);
-    if (page.next === undefined || (page.data ?? []).length === 0) break;
-    offset = page.next;
+    for (const page of remaining) papers = papers.concat(page.data ?? []);
   }
 
   const publications: Publication[] = papers.map((p) => {

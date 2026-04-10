@@ -49,7 +49,7 @@ export interface ScholarData {
 export type SourceConfig =
   | { type: 'google-scholar'; profileId: string }
   | { type: 'semantic-scholar'; authorId: string; apiKey?: string }
-  | { type: 'open-alex'; authorId: string }
+  | { type: 'open-alex'; authorId: string; mailto?: string }
   | { type: 'orcid'; orcidId: string };
 
 export interface ResearchPublicationsOptions {
@@ -66,7 +66,7 @@ export interface ResearchPublicationsOptions {
   sources?: SourceConfig[];
   /** How long to keep cached data before re-fetching. Defaults to 24 hours. */
   cacheMaxAgeMs?: number;
-  /** Path to the cache file, relative to the project root. Defaults to .scholar-cache.json */
+  /** Path to the cache file, relative to the project root. Defaults to .astro/scholar-cache.json */
   cachePath?: string;
 }
 

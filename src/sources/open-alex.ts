@@ -3,8 +3,7 @@ import { generateId } from '../merger.js';
 
 const BASE = 'https://api.openalex.org';
 
-// Use polite pool by adding mailto - no key required
-const MAILTO = 'astro-research-publications@example.com';
+const DEFAULT_MAILTO = 'astro-research-publications@example.com';
 
 interface OAWork {
   title: string;
@@ -27,9 +26,9 @@ interface OAAuthor {
   cited_by_count?: number;
 }
 
-async function fetchJSON<T>(url: string): Promise<T> {
+async function fetchJSON<T>(url: string, mailto: string): Promise<T> {
   const separator = url.includes('?') ? '&' : '?';
-  const res = await fetch(`${url}${separator}mailto=${MAILTO}`, {
+  const res = await fetch(`${url}${separator}mailto=${encodeURIComponent(mailto)}`, {
     headers: { Accept: 'application/json' },
     signal: AbortSignal.timeout(30_000),
   });
@@ -49,8 +48,8 @@ function reconstructAbstract(invertedIndex: Record<string, number[]> | null | un
   return words.join(' ') || null;
 }
 
-export async function fetchOpenAlex(authorId: string): Promise<SourceResult> {
-  const authorData = await fetchJSON<OAAuthor>(`${BASE}/authors/${authorId}`);
+export async function fetchOpenAlex(authorId: string, mailto = DEFAULT_MAILTO): Promise<SourceResult> {
+  const authorData = await fetchJSON<OAAuthor>(`${BASE}/authors/${authorId}`, mailto);
 
   // Paginate through all works
   let works: OAWork[] = [];
@@ -59,6 +58,7 @@ export async function fetchOpenAlex(authorId: string): Promise<SourceResult> {
   while (true) {
     const page = await fetchJSON<{ results: OAWork[]; meta: { next_cursor?: string } }>(
       `${BASE}/works?filter=authorships.author.id:${authorId}&per_page=200&cursor=${cursor}&select=${fields}`,
+      mailto,
     );
     works = works.concat(page.results ?? []);
     if (!page.meta?.next_cursor || page.results.length === 0) break;
