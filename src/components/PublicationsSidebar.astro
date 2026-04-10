@@ -6,9 +6,14 @@ interface Props {
   stats: CitationStats;
   coAuthors: CoAuthor[];
   citationsByYear?: Record<string, number> | null;
+  publicationsByYear?: Record<string, number> | null;
 }
 
-const { stats, coAuthors, citationsByYear } = Astro.props;
+const { stats, coAuthors, citationsByYear, publicationsByYear } = Astro.props;
+
+const hasCitationsByYear = Object.keys(citationsByYear ?? {}).length > 0;
+const chartData = hasCitationsByYear ? citationsByYear : publicationsByYear;
+const chartLabel = hasCitationsByYear ? 'citations' : 'publications';
 ---
 
 <div class="rp-sidebar-inner">
@@ -42,7 +47,7 @@ const { stats, coAuthors, citationsByYear } = Astro.props;
       </tbody>
     </table>
 
-    <CitationsChart citationsByYear={citationsByYear} />
+    <CitationsChart citationsByYear={chartData} label={chartLabel} />
   </div>
 
   <!-- Co-authors card -->

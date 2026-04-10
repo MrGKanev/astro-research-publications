@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import type { Publication, CoAuthor, CitationStats, SourceResult } from '../types.js';
+import { generateId } from '../merger.js';
 
 const BASE_URL = 'https://scholar.google.com';
 
@@ -13,7 +14,7 @@ const HEADERS: Record<string, string> = {
 };
 
 async function fetchPage(url: string): Promise<string> {
-  const res = await fetch(url, { headers: HEADERS });
+  const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} - ${url}`);
   return res.text();
 }
@@ -43,8 +44,7 @@ function parsePublications($: cheerio.CheerioAPI): Publication[] {
     const citHref = citEl.attr('href');
     const citationsUrl = citHref ? `${BASE_URL}${citHref}` : null;
 
-    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
-    publications.push({ id, title, authors, venue, year, citations, scholarUrl, citationsUrl, sources: ['google-scholar'] });
+    publications.push({ id: generateId(title), title, authors, venue, year, citations, scholarUrl, citationsUrl, sources: ['google-scholar'] });
   });
   return publications;
 }
@@ -120,14 +120,30 @@ export async function fetchGoogleScholar(profileId: string): Promise<SourceResul
 
   const hasMore = $('#gsc_bpf_more').length > 0 && !$('#gsc_bpf_more').prop('disabled');
   if (hasMore) {
+    const BATCH = 5;
     let cstart = 100;
-    while (true) {
-      const nextHtml = await fetchPage(`${BASE_URL}/citations?user=${profileId}&hl=en&pagesize=100&sortby=pubdate&cstart=${cstart}`);
-      const $next = cheerio.load(nextHtml);
-      const page = parsePublications($next);
-      publications = publications.concat(page);
-      if (!($next('#gsc_bpf_more').length > 0 && !$next('#gsc_bpf_more').prop('disabled')) || page.length === 0) break;
-      cstart += 100;
+    let keepFetching = true;
+    while (keepFetching) {
+      const offsets = Array.from({ length: BATCH }, (_, i) => cstart + i * 100);
+      const pages = await Promise.all(
+        offsets.map(async (offset) => {
+          const h = await fetchPage(`${BASE_URL}/citations?user=${profileId}&hl=en&pagesize=100&sortby=pubdate&cstart=${offset}`);
+          const $p = cheerio.load(h);
+          return { pubs: parsePublications($p), hasMore: $p('#gsc_bpf_more').length > 0 && !$p('#gsc_bpf_more').prop('disabled') };
+        }),
+      );
+      let lastNonEmpty = -1;
+      for (let i = 0; i < pages.length; i++) {
+        if (pages[i].pubs.length > 0) {
+          publications = publications.concat(pages[i].pubs);
+          lastNonEmpty = i;
+        }
+      }
+      if (lastNonEmpty === -1 || !pages[lastNonEmpty].hasMore) {
+        keepFetching = false;
+      } else {
+        cstart += BATCH * 100;
+      }
     }
   }
 

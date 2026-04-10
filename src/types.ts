@@ -34,8 +34,10 @@ export interface ScholarData {
   profileName: string;
   publications: Publication[];
   stats: CitationStats;
-  /** Citations per year, e.g. { "2023": 12, "2024": 30 } */
+  /** Citations per year, e.g. { "2023": 12, "2024": 30 } — only available from Google Scholar */
   citationsByYear: Record<string, number>;
+  /** Publications per year, computed from merged publications — always available */
+  publicationsByYear: Record<string, number>;
   coAuthors: CoAuthor[];
   lastSynced: string;
 }

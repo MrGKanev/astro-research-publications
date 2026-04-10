@@ -1,4 +1,20 @@
+import { createHash } from 'node:crypto';
 import type { Publication, CitationStats, CoAuthor, ScholarData, SourceResult } from './types.js';
+
+/** Generate a stable, unique ID for a publication from its full title */
+export function generateId(title: string): string {
+  return createHash('sha1').update(title.toLowerCase().trim()).digest('hex').slice(0, 16);
+}
+
+/** Jaccard similarity on normalised word sets — used for fuzzy title deduplication */
+function jaccardSimilarity(a: string, b: string): number {
+  const setA = new Set(a.split(' ').filter(Boolean));
+  const setB = new Set(b.split(' ').filter(Boolean));
+  let intersection = 0;
+  for (const w of setA) if (setB.has(w)) intersection++;
+  const union = setA.size + setB.size - intersection;
+  return union === 0 ? 1 : intersection / union;
+}
 
 /** Normalise a title for fuzzy deduplication across sources */
 function normaliseTitle(title: string): string {
@@ -25,6 +41,8 @@ function computeI10Index(counts: number[]): number {
   return counts.filter((c) => c >= 10).length;
 }
 
+const FUZZY_THRESHOLD = 0.85;
+
 function mergePublications(allResults: SourceResult[]): Publication[] {
   // Map from normalised title → merged Publication
   const merged = new Map<string, Publication>();
@@ -34,7 +52,18 @@ function mergePublications(allResults: SourceResult[]): Publication[] {
       const key = normaliseTitle(pub.title);
       if (!key) continue;
 
-      const existing = merged.get(key);
+      // Exact match first (fast path), then fuzzy match
+      let matchKey = merged.has(key) ? key : undefined;
+      if (!matchKey) {
+        for (const existingKey of merged.keys()) {
+          if (jaccardSimilarity(key, existingKey) >= FUZZY_THRESHOLD) {
+            matchKey = existingKey;
+            break;
+          }
+        }
+      }
+
+      const existing = matchKey ? merged.get(matchKey) : undefined;
       if (!existing) {
         merged.set(key, { ...pub });
         continue;
@@ -126,6 +155,17 @@ function mergeCitationsByYear(results: SourceResult[]): Record<string, number> {
   return scholarResult?.citationsByYear ?? {};
 }
 
+function computePublicationsByYear(publications: Publication[]): Record<string, number> {
+  const byYear: Record<string, number> = {};
+  for (const pub of publications) {
+    if (pub.year) {
+      const y = String(pub.year);
+      byYear[y] = (byYear[y] ?? 0) + 1;
+    }
+  }
+  return byYear;
+}
+
 function mergeCoAuthors(results: SourceResult[]): CoAuthor[] {
   const seen = new Set<string>();
   const coAuthors: CoAuthor[] = [];
@@ -155,6 +195,7 @@ export function mergeResults(results: SourceResult[], profileId: string): Schola
     publications,
     stats: mergeStats(results, publications),
     citationsByYear: mergeCitationsByYear(results),
+    publicationsByYear: computePublicationsByYear(publications),
     coAuthors: mergeCoAuthors(results),
     lastSynced: new Date().toISOString(),
   };

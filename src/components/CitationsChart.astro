@@ -1,9 +1,10 @@
 ---
 interface Props {
   citationsByYear?: Record<string, number> | null;
+  label?: string;
 }
 
-const { citationsByYear } = Astro.props;
+const { citationsByYear, label = 'citations' } = Astro.props;
 
 const entries = Object.entries(citationsByYear ?? {})
   .map(([year, count]) => ({ year, count }))
@@ -42,7 +43,7 @@ const gridLines = Array.from({ length: Math.floor(gridMax / step) + 1 }, (_, i) 
             <div
               class="chart-bar"
               style={`flex: ${count} 0 0px`}
-              title={`${year}: ${count} citation${count !== 1 ? 's' : ''}`}
+              title={`${year}: ${count} ${label}${count !== 1 ? '' : ''}`}
             />
             <span class="chart-bar-label">{year}</span>
           </div>

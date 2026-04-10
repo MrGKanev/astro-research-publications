@@ -1,4 +1,5 @@
 import type { Publication, SourceResult } from '../types.js';
+import { generateId } from '../merger.js';
 
 const BASE = 'https://pub.orcid.org/v3.0';
 
@@ -30,7 +31,7 @@ interface OrcidRecord {
 }
 
 async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`ORCID HTTP ${res.status} - ${url}`);
   return res.json() as Promise<T>;
 }
@@ -60,10 +61,8 @@ export async function fetchOrcid(orcidId: string): Promise<SourceResult> {
     const venue = summary?.['journal-title']?.value ?? '';
     const url = summary?.url?.value ?? (doi ? `https://doi.org/${doi}` : '');
 
-    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
-
     return [{
-      id,
+      id: generateId(title),
       title,
       authors: [],   // ORCID works summary doesn't include co-author list
       venue,

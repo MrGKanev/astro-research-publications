@@ -1,4 +1,5 @@
 import type { Publication, SourceResult } from '../types.js';
+import { generateId } from '../merger.js';
 
 const BASE = 'https://api.semanticscholar.org/graph/v1';
 
@@ -26,7 +27,7 @@ interface SSAuthor {
 async function fetchJSON<T>(url: string, apiKey?: string): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (apiKey) headers['x-api-key'] = apiKey;
-  const res = await fetch(url, { headers });
+  const res = await fetch(url, { headers, signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`Semantic Scholar HTTP ${res.status} - ${url}`);
   return res.json() as Promise<T>;
 }
@@ -53,9 +54,8 @@ export async function fetchSemanticScholar(authorId: string, apiKey?: string): P
 
   const publications: Publication[] = papers.map((p) => {
     const doi = p.externalIds?.DOI ?? null;
-    const id = p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
     return {
-      id,
+      id: generateId(p.title),
       title: p.title,
       authors: (p.authors ?? []).map((a) => a.name),
       venue: p.venue ?? '',

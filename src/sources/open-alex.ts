@@ -1,4 +1,5 @@
 import type { Publication, SourceResult } from '../types.js';
+import { generateId } from '../merger.js';
 
 const BASE = 'https://api.openalex.org';
 
@@ -30,6 +31,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
   const separator = url.includes('?') ? '&' : '?';
   const res = await fetch(`${url}${separator}mailto=${MAILTO}`, {
     headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`OpenAlex HTTP ${res.status} - ${url}`);
   return res.json() as Promise<T>;
@@ -66,10 +68,9 @@ export async function fetchOpenAlex(authorId: string): Promise<SourceResult> {
   const publications: Publication[] = works.map((w) => {
     const title = w.title ?? '';
     const doi = w.doi?.replace('https://doi.org/', '') ?? null;
-    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
     const openAlexUrl = w.id ?? '';
     return {
-      id,
+      id: generateId(title),
       title,
       authors: (w.authorships ?? []).map((a) => a.author.display_name),
       venue: w.primary_location?.source?.display_name ?? '',
