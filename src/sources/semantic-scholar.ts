@@ -45,7 +45,8 @@ export async function fetchSemanticScholar(authorId: string, apiKey?: string): P
     apiKey,
   );
   let papers: SSPaper[] = firstPage.data ?? [];
-  const total = firstPage.total ?? papers.length;
+  const rawTotal = firstPage.total ?? papers.length;
+  const total = Number.isFinite(rawTotal) && rawTotal > 0 ? rawTotal : papers.length;
 
   if (total > limit) {
     const offsets: number[] = [];

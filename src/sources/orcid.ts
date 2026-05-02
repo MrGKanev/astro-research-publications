@@ -48,7 +48,8 @@ export async function fetchOrcid(orcidId: string): Promise<SourceResult> {
 
   const publications: Publication[] = (worksData.group ?? []).flatMap((group): Publication[] => {
     // Take the first work-summary in the group (they are duplicates across sources)
-    const summary = group['work-summary'][0];
+    const summary = group['work-summary']?.[0];
+    if (!summary) return [];
     const title = summary?.title?.title?.value ?? '';
     if (!title) return [];
 

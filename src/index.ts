@@ -60,10 +60,11 @@ export default function researchPublications(options: ResearchPublicationsOption
                     writeCache(cachePath, data);
                     logger.info(`[astro-research-publications] Synced ${data.publications.length} publications, ${data.stats.totalCitations} total citations.`);
                   } catch (err) {
+                    const msg = err instanceof Error ? err.message : String(err);
                     if (data) {
-                      logger.warn(`[astro-research-publications] Fetch failed (${err}). Using stale cache from ${data.lastSynced}.`);
+                      logger.warn(`[astro-research-publications] Fetch failed (${msg}). Using stale cache from ${data.lastSynced}.`);
                     } else {
-                      throw new Error(`[astro-research-publications] Fetch failed and no cache: ${err}`);
+                      throw new Error(`[astro-research-publications] Fetch failed and no cache: ${msg}`);
                     }
                   }
                 }

@@ -43,7 +43,7 @@ const gridLines = Array.from({ length: Math.floor(gridMax / step) + 1 }, (_, i) 
             <div
               class="chart-bar"
               style={`flex: ${count} 0 0px`}
-              title={`${year}: ${count} ${label}${count !== 1 ? '' : ''}`}
+              title={`${year}: ${count} ${label}${count !== 1 ? 's' : ''}`}
             />
             <span class="chart-bar-label">{year}</span>
           </div>

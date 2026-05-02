@@ -21,5 +21,9 @@ export function writeCache(cachePath: string, data: ScholarData): void {
 }
 
 export function isCacheFresh(data: ScholarData, maxAgeMs: number): boolean {
-  return Date.now() - new Date(data.lastSynced).getTime() < maxAgeMs;
+  try {
+    return Date.now() - new Date(data.lastSynced).getTime() < maxAgeMs;
+  } catch {
+    return false;
+  }
 }
