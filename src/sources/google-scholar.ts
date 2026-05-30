@@ -107,7 +107,7 @@ function parseCoAuthors($: cheerio.CheerioAPI): CoAuthor[] {
 }
 
 export async function fetchGoogleScholar(profileId: string): Promise<SourceResult> {
-  const url = `${BASE_URL}/citations?user=${profileId}&hl=en&pagesize=100&sortby=pubdate`;
+  const url = `${BASE_URL}/citations?user=${encodeURIComponent(profileId)}&hl=en&pagesize=100&sortby=pubdate`;
   const html = await fetchPage(url);
   const $ = cheerio.load(html);
 
@@ -134,7 +134,7 @@ export async function fetchGoogleScholar(profileId: string): Promise<SourceResul
       const offsets = Array.from({ length: BATCH }, (_, i) => cstart + i * 100);
       const pages = await Promise.all(
         offsets.map(async (offset) => {
-          const h = await fetchPage(`${BASE_URL}/citations?user=${profileId}&hl=en&pagesize=100&sortby=pubdate&cstart=${offset}`);
+          const h = await fetchPage(`${BASE_URL}/citations?user=${encodeURIComponent(profileId)}&hl=en&pagesize=100&sortby=pubdate&cstart=${offset}`);
           const $p = cheerio.load(h);
           return { pubs: parsePublications($p), hasMore: $p('#gsc_bpf_more').length > 0 && !$p('#gsc_bpf_more').prop('disabled') };
         }),

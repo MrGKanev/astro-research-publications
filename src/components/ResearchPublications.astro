@@ -9,6 +9,7 @@ const scholarData = data as ScholarData;
 const synced = new Date(scholarData.lastSynced).toLocaleDateString('en-US', {
   year: 'numeric', month: 'long', day: 'numeric',
 });
+const usesScholar = scholarData.sources?.includes('google-scholar') ?? false;
 ---
 
 <div class="rp-root">
@@ -16,11 +17,13 @@ const synced = new Date(scholarData.lastSynced).toLocaleDateString('en-US', {
     <main class="rp-main">
       <PublicationsList publications={scholarData.publications} />
       <p class="rp-synced">
-        Last synced from <a
-          href={`https://scholar.google.com/citations?user=${scholarData.profileId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >Google Scholar</a> on {synced}
+        Last synced {usesScholar ? (
+          <>from <a
+            href={`https://scholar.google.com/citations?user=${encodeURIComponent(scholarData.profileId)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >Google Scholar</a></>
+        ) : null} on {synced}
       </p>
     </main>
 

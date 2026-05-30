@@ -33,15 +33,16 @@ async function fetchJSON<T>(url: string, apiKey?: string): Promise<T> {
 }
 
 export async function fetchSemanticScholar(authorId: string, apiKey?: string): Promise<SourceResult> {
+  const encodedId = encodeURIComponent(authorId);
   const authorData = await fetchJSON<SSAuthor>(
-    `${BASE}/author/${authorId}?fields=${AUTHOR_FIELDS}`,
+    `${BASE}/author/${encodedId}?fields=${AUTHOR_FIELDS}`,
     apiKey,
   );
 
   // Fetch all papers — first page gives us `total` so remaining pages load in parallel
   const limit = 1000;
   const firstPage = await fetchJSON<{ data: SSPaper[]; total?: number; next?: number }>(
-    `${BASE}/author/${authorId}/papers?fields=${PAPER_FIELDS}&limit=${limit}&offset=0`,
+    `${BASE}/author/${encodedId}/papers?fields=${PAPER_FIELDS}&limit=${limit}&offset=0`,
     apiKey,
   );
   let papers: SSPaper[] = firstPage.data ?? [];
@@ -54,7 +55,7 @@ export async function fetchSemanticScholar(authorId: string, apiKey?: string): P
     const remaining = await Promise.all(
       offsets.map((o) =>
         fetchJSON<{ data: SSPaper[] }>(
-          `${BASE}/author/${authorId}/papers?fields=${PAPER_FIELDS}&limit=${limit}&offset=${o}`,
+          `${BASE}/author/${encodedId}/papers?fields=${PAPER_FIELDS}&limit=${limit}&offset=${o}`,
           apiKey,
         ),
       ),

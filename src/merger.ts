@@ -6,10 +6,15 @@ export function generateId(title: string): string {
   return createHash('sha1').update(title.toLowerCase().trim()).digest('hex').slice(0, 16);
 }
 
+const FUZZY_THRESHOLD = 0.85;
+
 /** Jaccard similarity on normalised word sets — used for fuzzy title deduplication */
 function jaccardSimilarity(a: string, b: string): number {
   const setA = new Set(a.split(' ').filter(Boolean));
   const setB = new Set(b.split(' ').filter(Boolean));
+  // If size ratio makes FUZZY_THRESHOLD unreachable, skip the full computation
+  const [min, max] = setA.size <= setB.size ? [setA.size, setB.size] : [setB.size, setA.size];
+  if (max > 0 && min / max < FUZZY_THRESHOLD) return 0;
   let intersection = 0;
   for (const w of setA) if (setB.has(w)) intersection++;
   const union = setA.size + setB.size - intersection;
@@ -41,23 +46,28 @@ export function computeI10Index(counts: number[]): number {
   return counts.filter((c) => c >= 10).length;
 }
 
-const FUZZY_THRESHOLD = 0.85;
-
 function mergePublications(allResults: SourceResult[]): Publication[] {
   // Map from normalised title → merged Publication
   const merged = new Map<string, Publication>();
+  // Inverted index: word → set of existing normalised keys that contain it
+  // Limits fuzzy candidates to titles sharing at least one word, making dedup O(n·k) vs O(n²)
+  const wordIndex = new Map<string, Set<string>>();
 
   for (const result of allResults) {
     for (const pub of result.publications) {
       const key = normaliseTitle(pub.title);
       if (!key) continue;
 
-      // Exact match first (fast path), then fuzzy match
+      // Exact match first (fast path), then fuzzy match restricted to candidates sharing a word
       let matchKey = merged.has(key) ? key : undefined;
       if (!matchKey) {
-        for (const existingKey of merged.keys()) {
-          if (jaccardSimilarity(key, existingKey) >= FUZZY_THRESHOLD) {
-            matchKey = existingKey;
+        const candidates = new Set<string>();
+        for (const word of key.split(' ').filter(Boolean)) {
+          for (const candidate of wordIndex.get(word) ?? []) candidates.add(candidate);
+        }
+        for (const candidateKey of candidates) {
+          if (jaccardSimilarity(key, candidateKey) >= FUZZY_THRESHOLD) {
+            matchKey = candidateKey;
             break;
           }
         }
@@ -66,6 +76,10 @@ function mergePublications(allResults: SourceResult[]): Publication[] {
       const existing = matchKey ? merged.get(matchKey) : undefined;
       if (!existing) {
         merged.set(key, { ...pub });
+        for (const word of key.split(' ').filter(Boolean)) {
+          if (!wordIndex.has(word)) wordIndex.set(word, new Set());
+          wordIndex.get(word)!.add(key);
+        }
         continue;
       }
 
@@ -198,5 +212,6 @@ export function mergeResults(results: SourceResult[], profileId: string): Schola
     publicationsByYear: computePublicationsByYear(publications),
     coAuthors: mergeCoAuthors(results),
     lastSynced: new Date().toISOString(),
+    sources: results.map((r) => r.sourceName),
   };
 }

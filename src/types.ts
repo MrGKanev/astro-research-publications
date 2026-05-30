@@ -40,6 +40,8 @@ export interface ScholarData {
   publicationsByYear: Record<string, number>;
   coAuthors: CoAuthor[];
   lastSynced: string;
+  /** Which data sources were queried, e.g. ['google-scholar', 'semantic-scholar'] */
+  sources: string[];
 }
 
 // ---------------------------------------------------------------------------

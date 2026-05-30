@@ -37,9 +37,10 @@ async function fetchJSON<T>(url: string): Promise<T> {
 }
 
 export async function fetchOrcid(orcidId: string): Promise<SourceResult> {
+  const encodedId = encodeURIComponent(orcidId);
   const [record, worksData] = await Promise.all([
-    fetchJSON<OrcidRecord>(`${BASE}/${orcidId}/person`),
-    fetchJSON<OrcidWorks>(`${BASE}/${orcidId}/works`),
+    fetchJSON<OrcidRecord>(`${BASE}/${encodedId}/person`),
+    fetchJSON<OrcidWorks>(`${BASE}/${encodedId}/works`),
   ]);
 
   const given = record.person?.name?.['given-names']?.value ?? '';

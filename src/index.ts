@@ -26,9 +26,9 @@ function describeSource(source: SourceConfig): string {
 
 export default function researchPublications(options: ResearchPublicationsOptions): AstroIntegration {
   const {
-    cacheMaxAgeMs = DEFAULT_CACHE_MAX_AGE_MS,
     cachePath: cachePathOption = '.astro/scholar-cache.json',
   } = options;
+  const cacheMaxAgeMs = Math.max(0, options.cacheMaxAgeMs ?? DEFAULT_CACHE_MAX_AGE_MS);
 
   const sources = resolveSources(options);
 
@@ -47,7 +47,7 @@ export default function researchPublications(options: ResearchPublicationsOption
               async load(id) {
                 if (id !== RESOLVED_ID) return;
                 const cachePath = resolveCachePath(config.root, cachePathOption);
-                let data: ScholarData | null = readCache(cachePath);
+                let data: ScholarData | null = await readCache(cachePath);
 
                 if (data && isCacheFresh(data, cacheMaxAgeMs)) {
                   const age = Math.round((Date.now() - new Date(data.lastSynced).getTime()) / 60000);
@@ -57,7 +57,7 @@ export default function researchPublications(options: ResearchPublicationsOption
                   try {
                     logger.info(`[astro-research-publications] Fetching from: ${sourceLabels}`);
                     data = await fetchPublications(sources);
-                    writeCache(cachePath, data);
+                    await writeCache(cachePath, data);
                     logger.info(`[astro-research-publications] Synced ${data.publications.length} publications, ${data.stats.totalCitations} total citations.`);
                   } catch (err) {
                     const msg = err instanceof Error ? err.message : String(err);

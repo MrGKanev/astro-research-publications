@@ -3,8 +3,6 @@ import { generateId } from '../merger.js';
 
 const BASE = 'https://api.openalex.org';
 
-const DEFAULT_MAILTO = 'astro-research-publications@example.com';
-
 interface OAWork {
   title: string;
   publication_year: number | null;
@@ -26,9 +24,13 @@ interface OAAuthor {
   cited_by_count?: number;
 }
 
-async function fetchJSON<T>(url: string, mailto: string): Promise<T> {
-  const separator = url.includes('?') ? '&' : '?';
-  const res = await fetch(`${url}${separator}mailto=${encodeURIComponent(mailto)}`, {
+async function fetchJSON<T>(url: string, mailto?: string): Promise<T> {
+  let fullUrl = url;
+  if (mailto) {
+    const sep = url.includes('?') ? '&' : '?';
+    fullUrl = `${url}${sep}mailto=${encodeURIComponent(mailto)}`;
+  }
+  const res = await fetch(fullUrl, {
     headers: { Accept: 'application/json' },
     signal: AbortSignal.timeout(30_000),
   });
@@ -48,8 +50,9 @@ function reconstructAbstract(invertedIndex: Record<string, number[]> | null | un
   return words.join(' ') || null;
 }
 
-export async function fetchOpenAlex(authorId: string, mailto = DEFAULT_MAILTO): Promise<SourceResult> {
-  const authorData = await fetchJSON<OAAuthor>(`${BASE}/authors/${authorId}`, mailto);
+export async function fetchOpenAlex(authorId: string, mailto?: string): Promise<SourceResult> {
+  const encodedId = encodeURIComponent(authorId);
+  const authorData = await fetchJSON<OAAuthor>(`${BASE}/authors/${encodedId}`, mailto);
 
   // Paginate through all works
   let works: OAWork[] = [];
@@ -57,7 +60,7 @@ export async function fetchOpenAlex(authorId: string, mailto = DEFAULT_MAILTO): 
   const fields = 'title,publication_year,cited_by_count,authorships,primary_location,doi,abstract_inverted_index,id';
   while (true) {
     const page = await fetchJSON<{ results: OAWork[]; meta: { next_cursor?: string } }>(
-      `${BASE}/works?filter=authorships.author.id:${authorId}&per_page=200&cursor=${cursor}&select=${fields}`,
+      `${BASE}/works?filter=authorships.author.id:${encodedId}&per_page=200&cursor=${encodeURIComponent(cursor)}&select=${fields}`,
       mailto,
     );
     works = works.concat(page.results ?? []);
