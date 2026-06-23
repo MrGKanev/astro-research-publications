@@ -66,6 +66,12 @@ import ResearchPublications from 'astro-research-publications/components';
 <ResearchPublications />
 ```
 
+To show only the top N publications (stats always reflect the full dataset):
+
+```astro
+<ResearchPublications limit={10} />
+```
+
 That's it - no client-side JavaScript required.
 
 ---

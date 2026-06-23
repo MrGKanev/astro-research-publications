@@ -4,7 +4,16 @@ import PublicationsList from './PublicationsList.astro';
 import PublicationsSidebar from './PublicationsSidebar.astro';
 import data from 'virtual:scholar-data';
 
+interface Props {
+  /** Show only the first N publications. Omit to show all. */
+  limit?: number;
+}
+
+const { limit } = Astro.props;
 const scholarData = data as ScholarData;
+
+const publications = limit ? scholarData.publications.slice(0, limit) : scholarData.publications;
+const totalCount = scholarData.publications.length;
 
 const synced = new Date(scholarData.lastSynced).toLocaleDateString('en-US', {
   year: 'numeric', month: 'long', day: 'numeric',
@@ -15,7 +24,10 @@ const usesScholar = scholarData.sources?.includes('google-scholar') ?? false;
 <div class="rp-root">
   <div class="rp-layout">
     <main class="rp-main">
-      <PublicationsList publications={scholarData.publications} />
+      <PublicationsList publications={publications} />
+      {limit && publications.length < totalCount && (
+        <p class="rp-showing">Showing {publications.length} of {totalCount} publications</p>
+      )}
       <p class="rp-synced">
         Last synced {usesScholar ? (
           <>from <a
@@ -33,7 +45,7 @@ const usesScholar = scholarData.sources?.includes('google-scholar') ?? false;
         coAuthors={scholarData.coAuthors}
         citationsByYear={scholarData.citationsByYear}
         publicationsByYear={scholarData.publicationsByYear}
-        publicationsCount={scholarData.publications.length}
+        publicationsCount={totalCount}
       />
     </aside>
   </div>
@@ -52,8 +64,14 @@ const usesScholar = scholarData.sources?.includes('google-scholar') ?? false;
     .rp-sidebar { order: -1; }
   }
 
+  .rp-showing {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: var(--rp-text-secondary, #888);
+  }
+
   .rp-synced {
-    margin-top: 1.5rem;
+    margin-top: 0.5rem;
     font-size: 0.78rem;
     color: var(--rp-text-secondary, #888);
   }
