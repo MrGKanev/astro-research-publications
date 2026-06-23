@@ -5,7 +5,7 @@ export interface Publication {
   venue: string;
   year: number | null;
   citations: number;
-  scholarUrl: string;
+  scholarUrl: string | null;
   citationsUrl: string | null;
   doi?: string | null;
   abstract?: string | null;
@@ -15,7 +15,7 @@ export interface Publication {
 
 export interface CoAuthor {
   name: string;
-  scholarUrl: string;
+  scholarUrl: string | null;
   affiliation: string | null;
 }
 

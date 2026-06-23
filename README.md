@@ -15,18 +15,22 @@ Data is cached locally so repeat builds are fast, and a stale cache is used if a
 - Fetches publications, citation counts, h-index, i10-index, and co-authors
 - **Multi-source** - combine Google Scholar, Semantic Scholar, OpenAlex, and/or ORCID; results are merged and deduplicated by title
 - Renders a ready-to-use `<ResearchPublications />` component with a responsive two-column layout
+- Expandable abstract and DOI badge per publication (no JavaScript required)
 - Local JSON cache with configurable max-age (default: 24 h) - no unnecessary requests on every build
 - Falls back to stale cache if a live fetch fails, so your site never breaks
 - CSS custom properties for easy theming - no stylesheet overrides required
 - Full TypeScript types exported for `ScholarData`, `Publication`, `CitationStats`, `SourceConfig`, and more
-- Works with Astro 4, 5 and 6
+- Works with Astro 4, 5, 6, and 7
 
 ---
 
 ## Installation
 
 ```bash
+# npm
 npm install astro-research-publications
+# pnpm
+pnpm add astro-research-publications
 ```
 
 ---
@@ -150,7 +154,7 @@ import ResearchPublications from 'astro-research-publications/components';
 | `scholarId` | `string` | - | Google Scholar profile ID. Shorthand for `sources: [{ type: 'google-scholar', profileId }]`. Ignored when `sources` is set. |
 | `sources` | `SourceConfig[]` | - | One or more data sources (see above). Takes precedence over `scholarId`. |
 | `cacheMaxAgeMs` | `number` | `86400000` (24 h) | How long cached data is considered fresh. |
-| `cachePath` | `string` | `.scholar-cache.json` | Path to the cache file, relative to the project root. |
+| `cachePath` | `string` | `.astro/scholar-cache.json` | Path to the cache file, relative to the project root. |
 
 ---
 
@@ -193,8 +197,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npm run build
+      - run: npm ci          # or: pnpm install / yarn install
+      - run: npm run build   # or: pnpm run build / yarn build
       # Then trigger a deploy hook or commit the updated cache file
 ```
 

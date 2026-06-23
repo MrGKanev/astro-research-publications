@@ -23,9 +23,13 @@ const { publications } = Astro.props;
         <tr class="rp-row">
           <td class="rp-td rp-td-num">{i + 1}</td>
           <td class="rp-td rp-td-title">
-            <a href={pub.scholarUrl} target="_blank" rel="noopener noreferrer" class="rp-title-link">
-              {pub.title}
-            </a>
+            {pub.scholarUrl ? (
+              <a href={pub.scholarUrl} target="_blank" rel="noopener noreferrer" class="rp-title-link">
+                {pub.title}
+              </a>
+            ) : (
+              <span class="rp-title-link rp-title-plain">{pub.title}</span>
+            )}
             <div class="rp-authors">
               {pub.authors.map((author, idx) => (
                 <>
@@ -43,6 +47,22 @@ const { publications } = Astro.props;
               ))}
             </div>
             {pub.venue && <div class="rp-venue">{pub.venue}</div>}
+            {(pub.abstract || pub.doi) && (
+              <details class="rp-details">
+                <summary class="rp-details-toggle">Abstract</summary>
+                <div class="rp-details-body">
+                  {pub.doi && (
+                    <a
+                      href={`https://doi.org/${pub.doi}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="rp-doi-badge"
+                    >DOI: {pub.doi}</a>
+                  )}
+                  {pub.abstract && <p class="rp-abstract">{pub.abstract}</p>}
+                </div>
+              </details>
+            )}
           </td>
           <td class="rp-td rp-td-center">{pub.year ?? '-'}</td>
           <td class="rp-td rp-td-center">
@@ -119,12 +139,60 @@ const { publications } = Astro.props;
     line-height: 1.4;
     margin-bottom: 0.2rem;
   }
-  .rp-title-link:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
+  a.rp-title-link:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
+  .rp-title-plain { cursor: default; }
 
   .rp-authors { font-size: 0.78rem; color: var(--rp-text-secondary, #666); margin-bottom: 0.1rem; }
   .rp-author-link { color: inherit; text-decoration: none; }
   .rp-author-link:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
   .rp-venue { font-size: 0.75rem; color: var(--rp-text-secondary, #888); font-style: italic; }
+
+  .rp-details { margin-top: 0.4rem; }
+
+  .rp-details-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--rp-text-secondary, #888);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+  .rp-details-toggle::-webkit-details-marker { display: none; }
+  .rp-details-toggle::before {
+    content: '▸';
+    font-size: 0.65rem;
+    transition: transform 0.15s;
+  }
+  details[open] .rp-details-toggle::before { transform: rotate(90deg); }
+  .rp-details-toggle:hover { color: var(--rp-accent, #d8613c); }
+
+  .rp-details-body { padding-top: 0.5rem; }
+
+  .rp-doi-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: var(--rp-text-secondary, #666);
+    background: var(--rp-row-hover, rgba(0,0,0,0.04));
+    border: 1px solid var(--rp-border, #e5e5e5);
+    border-radius: 3px;
+    padding: 0.15rem 0.45rem;
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+  }
+  .rp-doi-badge:hover { color: var(--rp-accent, #d8613c); border-color: var(--rp-accent, #d8613c); }
+
+  .rp-abstract {
+    font-size: 0.8rem;
+    color: var(--rp-text-secondary, #555);
+    line-height: 1.55;
+    margin: 0;
+  }
 
   .rp-citations-link, .rp-citations-num {
     color: var(--rp-accent, #d8613c);

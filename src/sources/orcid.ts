@@ -61,7 +61,7 @@ export async function fetchOrcid(orcidId: string): Promise<SourceResult> {
     const doi = externalIds.find((e) => e['external-id-type'] === 'doi')?.['external-id-value'] ?? null;
 
     const venue = summary?.['journal-title']?.value ?? '';
-    const url = summary?.url?.value ?? (doi ? `https://doi.org/${doi}` : '');
+    const url: string | null = summary?.url?.value || (doi ? `https://doi.org/${doi}` : null);
 
     return [{
       id: generateId(title),

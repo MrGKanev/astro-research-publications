@@ -60,14 +60,18 @@ const chartLabel = hasCitationsByYear ? 'citations' : 'publications';
       <ul class="rp-coauthors">
         {coAuthors.map((author) => (
           <li class="rp-coauthor">
-            <a
-              href={author.scholarUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="rp-coauthor-name"
-            >
-              {author.name}
-            </a>
+            {author.scholarUrl ? (
+              <a
+                href={author.scholarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="rp-coauthor-name"
+              >
+                {author.name}
+              </a>
+            ) : (
+              <span class="rp-coauthor-name">{author.name}</span>
+            )}
             {author.affiliation && (
               <span class="rp-coauthor-affiliation">{author.affiliation}</span>
             )}

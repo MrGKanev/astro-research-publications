@@ -28,7 +28,7 @@ function parsePublications($: cheerio.CheerioAPI): Publication[] {
     if (!title) return;
 
     const relHref = titleEl.attr('href') ?? '';
-    const scholarUrl = relHref ? `${BASE_URL}${relHref}` : '';
+    const scholarUrl = relHref ? `${BASE_URL}${relHref}` : null;
 
     const grayEls = $row.find('.gs_gray');
     const authorsRaw = $(grayEls[0]).text().trim();
@@ -94,7 +94,7 @@ function parseCoAuthors($: cheerio.CheerioAPI): CoAuthor[] {
     if (!name) return;
 
     const href = anchor.attr('href') ?? '';
-    const scholarUrl = href.startsWith('http') ? href : href ? `${BASE_URL}${href}` : '';
+    const scholarUrl = href.startsWith('http') ? href : href ? `${BASE_URL}${href}` : null;
 
     const rawAffiliation = $el.find('.gsc_rsb_a_ext').text().trim();
     const affiliation = rawAffiliation

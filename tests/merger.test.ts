@@ -89,7 +89,7 @@ function makeSource(name: string, pubs: Partial<SourceResult['publications'][num
       venue: p.venue ?? '',
       year: p.year ?? 2020,
       citations: p.citations ?? 0,
-      scholarUrl: p.scholarUrl ?? '',
+      scholarUrl: p.scholarUrl ?? null,
       citationsUrl: p.citationsUrl ?? null,
       sources: p.sources ?? [name],
       ...p,

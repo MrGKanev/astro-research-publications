@@ -71,7 +71,6 @@ export async function fetchOpenAlex(authorId: string, mailto?: string): Promise<
   const publications: Publication[] = works.map((w) => {
     const title = w.title ?? '';
     const doi = w.doi?.replace('https://doi.org/', '') ?? null;
-    const openAlexUrl = w.id ?? '';
     return {
       id: generateId(title),
       title,
@@ -79,7 +78,7 @@ export async function fetchOpenAlex(authorId: string, mailto?: string): Promise<
       venue: w.primary_location?.source?.display_name ?? '',
       year: w.publication_year ?? null,
       citations: w.cited_by_count ?? 0,
-      scholarUrl: openAlexUrl,
+      scholarUrl: w.id || null,
       citationsUrl: null,
       doi,
       abstract: reconstructAbstract(w.abstract_inverted_index),
