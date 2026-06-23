@@ -32,6 +32,9 @@
     "./components": "./src/components/ResearchPublications.astro",
     "./virtual": "./src/virtual.d.ts"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
