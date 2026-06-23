@@ -1,6 +1,7 @@
 # astro-research-publications
 
 [![npm](https://img.shields.io/npm/v/astro-research-publications)](https://www.npmjs.com/package/astro-research-publications)
+[![npm downloads](https://img.shields.io/npm/dm/astro-research-publications)](https://www.npmjs.com/package/astro-research-publications)
 [![Publish to npm](https://github.com/MrGKanev/astro-research-publications/actions/workflows/publish.yml/badge.svg)](https://github.com/MrGKanev/astro-research-publications/actions/workflows/publish.yml)
 
 An Astro integration that fetches your academic publications at build time from one or more sources and renders a fully-styled publications page - complete with citation stats, a citations-per-year bar chart, and co-author list.
