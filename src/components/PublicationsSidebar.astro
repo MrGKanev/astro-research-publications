@@ -7,9 +7,10 @@ interface Props {
   coAuthors: CoAuthor[];
   citationsByYear?: Record<string, number> | null;
   publicationsByYear?: Record<string, number> | null;
+  publicationsCount: number;
 }
 
-const { stats, coAuthors, citationsByYear, publicationsByYear } = Astro.props;
+const { stats, coAuthors, citationsByYear, publicationsByYear, publicationsCount } = Astro.props;
 
 const hasCitationsByYear = Object.keys(citationsByYear ?? {}).length > 0;
 const chartData = hasCitationsByYear ? citationsByYear : publicationsByYear;
@@ -29,6 +30,10 @@ const chartLabel = hasCitationsByYear ? 'citations' : 'publications';
         </tr>
       </thead>
       <tbody>
+        <tr>
+          <td class="rp-stats-label">Publications</td>
+          <td class="rp-stats-val" colspan="2">{publicationsCount}</td>
+        </tr>
         <tr>
           <td class="rp-stats-label">Citations</td>
           <td class="rp-stats-val">{stats.totalCitations}</td>
