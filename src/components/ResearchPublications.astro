@@ -3,6 +3,7 @@ import type { ScholarData } from '../types.js';
 import PublicationsList from './PublicationsList.astro';
 import PublicationsSidebar from './PublicationsSidebar.astro';
 import data from 'virtual:scholar-data';
+import { toBibTeX } from 'astro-research-publications';
 
 interface Props {
   /** Show only the first N publications. Omit to show all. */
@@ -18,24 +19,44 @@ const totalCount = scholarData.publications.length;
 const synced = new Date(scholarData.lastSynced).toLocaleDateString('en-US', {
   year: 'numeric', month: 'long', day: 'numeric',
 });
-const usesScholar = scholarData.sources?.includes('google-scholar') ?? false;
+const years = [...new Set(publications.map((publication) => publication.year).filter((year): year is number => year !== null))].sort((a, b) => b - a);
+const sourceLabels: Record<string, string> = {
+  'google-scholar': 'Google Scholar',
+  'semantic-scholar': 'Semantic Scholar',
+  'open-alex': 'OpenAlex',
+  'orcid': 'ORCID',
+};
+const sourceOptions = [...new Set(publications.flatMap((publication) => publication.sources ?? []))];
+const bibtexUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(toBibTeX(scholarData.publications))}`;
 ---
 
 <div class="rp-root">
   <div class="rp-layout">
     <main class="rp-main">
+      <div class="rp-toolbar">
+        <div class="rp-filters" hidden>
+          <label>Year
+            <select class="rp-year-filter" aria-label="Filter publications by year">
+              <option value="">All years</option>
+              {years.map((year) => <option value={String(year)}>{year}</option>)}
+            </select>
+          </label>
+          <label>Source
+            <select class="rp-source-filter" aria-label="Filter publications by source">
+              <option value="">All sources</option>
+              {sourceOptions.map((source) => <option value={source}>{sourceLabels[source] ?? source}</option>)}
+            </select>
+          </label>
+        </div>
+        {scholarData.publications.length > 0 && (
+          <a class="rp-export" href={bibtexUrl} download="publications.bib">Download BibTeX</a>
+        )}
+      </div>
       <PublicationsList publications={publications} />
-      {limit && publications.length < totalCount && (
-        <p class="rp-showing">Showing {publications.length} of {totalCount} publications</p>
-      )}
+      <p class="rp-empty" hidden>No publications match these filters.</p>
+      <p class="rp-showing" aria-live="polite">Showing <span class="rp-visible-count">{publications.length}</span> of {totalCount} publications</p>
       <p class="rp-synced">
-        Last synced {usesScholar ? (
-          <>from <a
-            href={`https://scholar.google.com/citations?user=${encodeURIComponent(scholarData.profileId)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >Google Scholar</a></>
-        ) : null} on {synced}
+        Oldest source last synced on {synced}
       </p>
     </main>
 
@@ -52,6 +73,13 @@ const usesScholar = scholarData.sources?.includes('google-scholar') ?? false;
 </div>
 
 <style>
+  .rp-toolbar { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.8rem; }
+  .rp-filters { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .rp-filters[hidden], .rp-empty[hidden] { display: none; }
+  .rp-filters label { display: grid; gap: 0.25rem; font-size: 0.75rem; color: var(--rp-text-secondary, #666); }
+  .rp-filters select { padding: 0.35rem 0.5rem; border: 1px solid var(--rp-border, #e5e5e5); border-radius: 4px; background: transparent; color: var(--rp-text, #111); font: inherit; }
+  .rp-export { color: var(--rp-accent, #d8613c); font-size: 0.8rem; text-decoration: underline; text-underline-offset: 2px; }
+  .rp-empty { color: var(--rp-text-secondary, #666); font-size: 0.85rem; }
   .rp-layout {
     display: grid;
     grid-template-columns: 1fr 260px;
@@ -78,3 +106,31 @@ const usesScholar = scholarData.sources?.includes('google-scholar') ?? false;
   .rp-synced a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
   .rp-synced a:hover { color: var(--rp-accent, #d8613c); }
 </style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('.rp-root')) {
+    if (root.dataset.rpInitialized) continue;
+    root.dataset.rpInitialized = 'true';
+    const filters = root.querySelector<HTMLElement>('.rp-filters');
+    const yearSelect = root.querySelector<HTMLSelectElement>('.rp-year-filter');
+    const sourceSelect = root.querySelector<HTMLSelectElement>('.rp-source-filter');
+    const count = root.querySelector<HTMLElement>('.rp-visible-count');
+    const empty = root.querySelector<HTMLElement>('.rp-empty');
+    if (!filters || !yearSelect || !sourceSelect || !count || !empty) continue;
+    filters.hidden = false;
+    const rows = root.querySelectorAll<HTMLTableRowElement>('.rp-row');
+    const applyFilters = () => {
+      let visible = 0;
+      for (const row of rows) {
+        const matchesYear = !yearSelect.value || row.dataset.rpYear === yearSelect.value;
+        const matchesSource = !sourceSelect.value || (row.dataset.rpSources ?? '').split(',').includes(sourceSelect.value);
+        row.hidden = !(matchesYear && matchesSource);
+        if (!row.hidden) visible++;
+      }
+      count.textContent = String(visible);
+      empty.hidden = visible > 0;
+    };
+    yearSelect.addEventListener('change', applyFilters);
+    sourceSelect.addEventListener('change', applyFilters);
+  }
+</script>

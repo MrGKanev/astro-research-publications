@@ -27,7 +27,7 @@ const SOURCE_LABELS: Record<string, string> = {
     </thead>
     <tbody>
       {publications.map((pub, i) => (
-        <tr class="rp-row">
+        <tr class="rp-row" data-rp-year={pub.year ?? ''} data-rp-sources={(pub.sources ?? []).join(',')}>
           <td class="rp-td rp-td-num">{i + 1}</td>
           <td class="rp-td rp-td-title">
             {pub.scholarUrl ? (

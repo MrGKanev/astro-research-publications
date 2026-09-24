@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/astro-research-publications)](https://www.npmjs.com/package/astro-research-publications)
 [![npm downloads](https://img.shields.io/npm/dm/astro-research-publications)](https://www.npmjs.com/package/astro-research-publications)
+[![Socket Badge](https://badge.socket.dev/npm/package/astro-research-publications)](https://socket.dev/npm/package/astro-research-publications)
 [![Publish to npm](https://github.com/MrGKanev/astro-research-publications/actions/workflows/publish.yml/badge.svg)](https://github.com/MrGKanev/astro-research-publications/actions/workflows/publish.yml)
 
 An Astro integration that fetches your academic publications at build time from one or more sources and renders a fully-styled publications page - complete with citation stats, a citations-per-year bar chart, and co-author list.
@@ -18,8 +19,9 @@ Data is cached locally so repeat builds are fast, and a stale cache is used if a
 - **Multi-source** - combine Google Scholar, Semantic Scholar, OpenAlex, and/or ORCID; results are merged and deduplicated by title
 - Renders a ready-to-use `<ResearchPublications />` component with a responsive two-column layout
 - Expandable abstract and DOI badge per publication (no JavaScript required)
-- Local JSON cache with configurable max-age (default: 24 h) - no unnecessary requests on every build
-- Falls back to stale cache if a live fetch fails, so your site never breaks
+- Local JSON cache per source and profile with configurable max-age (default: 24 h)
+- Refreshes healthy sources independently and uses stale data for any source that fails
+- BibTeX download and year/source filters on the publications page
 - CSS custom properties for easy theming - no stylesheet overrides required
 - Full TypeScript types exported for `ScholarData`, `Publication`, `CitationStats`, `SourceConfig`, and more
 - Works with Astro 4, 5, 6, and 7
@@ -73,7 +75,16 @@ To show only the top N publications (stats always reflect the full dataset):
 <ResearchPublications limit={10} />
 ```
 
-That's it - no client-side JavaScript required.
+The component includes year and source filters and a download link for all publications in BibTeX format. Filtering uses a small client-side script; the full list, statistics, and BibTeX link remain available without JavaScript. With `limit`, filters apply to the displayed subset, while the BibTeX download contains the full dataset.
+
+You can also generate BibTeX yourself:
+
+```ts
+import { toBibTeX } from 'astro-research-publications';
+import data from 'virtual:scholar-data';
+
+const bibtex = toBibTeX(data.publications);
+```
 
 ---
 
@@ -94,6 +105,8 @@ researchPublications({
 ```
 
 You can use any combination - a single source, two sources, or all four.
+
+Each configured profile has its own cache entry. If one source is unavailable, the integration keeps its stale entry when available and continues with the other sources. If a source has no cached data, that source is omitted with a warning; the build fails only when none of the configured sources has usable data. Changing a source ID cannot reuse data from the old profile. Existing caches from versions before this format are refreshed on the next build.
 
 ### Finding your IDs
 
@@ -162,7 +175,7 @@ import ResearchPublications from 'astro-research-publications/components';
 | `scholarId` | `string` | - | Google Scholar profile ID. Shorthand for `sources: [{ type: 'google-scholar', profileId }]`. Ignored when `sources` is set. |
 | `sources` | `SourceConfig[]` | - | One or more data sources (see above). Takes precedence over `scholarId`. |
 | `cacheMaxAgeMs` | `number` | `86400000` (24 h) | How long cached data is considered fresh. |
-| `cachePath` | `string` | `.astro/scholar-cache.json` | Path to the cache file, relative to the project root. |
+| `cachePath` | `string` | `.astro/scholar-cache.json` | Path to the per-source cache file, relative to the project root. |
 
 ---
 
@@ -186,10 +199,10 @@ All properties have sensible fallback values - only override what you need.
 
 ## Auto-sync
 
-To keep publications up to date without manual deploys, add a scheduled GitHub Actions workflow that triggers a rebuild on your hosting platform. A minimal daily workflow:
+To keep publications up to date without manual deploys, create a deploy hook in your hosting provider and save its URL as the `DEPLOY_HOOK_URL` repository secret. Then add a scheduled GitHub Actions workflow that calls the hook. For example:
 
 ```yaml
-# .github/workflows/sync-scholar.yml
+# .github/workflows/scholar-sync.yml
 name: Sync publications
 
 on:
@@ -201,14 +214,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci          # or: pnpm install / yarn install
-      - run: npm run build   # or: pnpm run build / yarn build
-      # Then trigger a deploy hook or commit the updated cache file
+      - name: Trigger deploy
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
 ```
+
+This repository includes a [ready-to-copy workflow](.github/workflows/scholar-sync.yml) with a weekly schedule. The deploy hook triggers a new build, where the integration refreshes its cached data.
 
 ---
 

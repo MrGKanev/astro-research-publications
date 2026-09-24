@@ -1,9 +1,10 @@
 import type { AstroIntegration } from 'astro';
-import { fetchPublications } from './fetcher.js';
-import { resolveCachePath, readCache, writeCache, isCacheFresh } from './cache.js';
-import type { ResearchPublicationsOptions, SourceConfig, ScholarData } from './types.js';
+import { syncPublications } from './fetcher.js';
+import { resolveCachePath, readCache, writeCache } from './cache.js';
+import type { ResearchPublicationsOptions, SourceConfig } from './types.js';
 
 export type { ResearchPublicationsOptions, ScholarData, Publication, CoAuthor, CitationStats, SourceConfig } from './types.js';
+export { toBibTeX } from './bibtex.js';
 
 const VIRTUAL_MODULE_ID = 'virtual:scholar-data';
 const RESOLVED_ID = '\0' + VIRTUAL_MODULE_ID;
@@ -47,27 +48,13 @@ export default function researchPublications(options: ResearchPublicationsOption
               async load(id) {
                 if (id !== RESOLVED_ID) return;
                 const cachePath = resolveCachePath(config.root, cachePathOption);
-                let data: ScholarData | null = await readCache(cachePath);
-
-                if (data && isCacheFresh(data, cacheMaxAgeMs)) {
-                  const age = Math.round((Date.now() - new Date(data.lastSynced).getTime()) / 60000);
-                  logger.info(`[astro-research-publications] Using cached data (${age}m old, ${data.publications.length} publications).`);
-                } else {
-                  const sourceLabels = sources.map(describeSource).join(', ');
-                  try {
-                    logger.info(`[astro-research-publications] Fetching from: ${sourceLabels}`);
-                    data = await fetchPublications(sources);
-                    await writeCache(cachePath, data);
-                    logger.info(`[astro-research-publications] Synced ${data.publications.length} publications, ${data.stats.totalCitations} total citations.`);
-                  } catch (err) {
-                    const msg = err instanceof Error ? err.message : String(err);
-                    if (data) {
-                      logger.warn(`[astro-research-publications] Fetch failed (${msg}). Using stale cache from ${data.lastSynced}.`);
-                    } else {
-                      throw new Error(`[astro-research-publications] Fetch failed and no cache: ${msg}`);
-                    }
-                  }
-                }
+                const cache = await readCache(cachePath);
+                const sourceLabels = sources.map(describeSource).join(', ');
+                logger.info(`Loading: ${sourceLabels}`);
+                const { data, cache: nextCache, updated, warnings } = await syncPublications(sources, cache, cacheMaxAgeMs);
+                for (const warning of warnings) logger.warn(warning);
+                if (updated) await writeCache(cachePath, nextCache);
+                logger.info(`Ready: ${data.publications.length} publications, ${data.stats.totalCitations} total citations.`);
 
                 return `export default ${JSON.stringify(data)}`;
               },

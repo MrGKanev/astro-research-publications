@@ -51,6 +51,6 @@ jobs:
         # Sends a POST request to the deploy hook URL stored in the secret.
         # The hosting provider (Vercel/Netlify) will queue a new build, which
         # causes the integration to re-fetch Google Scholar and rebuild the page.
-        run: |
-          curl -s -o /dev/null -w "HTTP status: %{http_code}\n" \
-            -X POST "${{ secrets.DEPLOY_HOOK_URL }}"
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"

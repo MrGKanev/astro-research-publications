@@ -3,7 +3,7 @@
   "version": "0.3.5",
   "description": "Astro integration that syncs your academic publications from Google Scholar, Semantic Scholar, OpenAlex, and/or ORCID and renders a publications page.",
   "type": "module",
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.27.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/MrGKanev/astro-research-publications"
@@ -42,7 +42,7 @@
     "./virtual": "./src/virtual.d.ts"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -56,12 +56,12 @@
     "astro": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "dependencies": {
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.2.0"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
-    "astro": "^7.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^4.1.4"
+    "@types/node": "^26.6.2",
+    "astro": "^7.3.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
   }
 }
