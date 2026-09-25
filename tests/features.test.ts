@@ -10,7 +10,7 @@ import type { Publication, SourceConfig, SourceResult } from '../src/types.js';
 
 const scholar: SourceConfig = { type: 'google-scholar', profileId: 'A' };
 const semantic: SourceConfig = { type: 'semantic-scholar', authorId: 'B' };
-const emptyCache = (): SourceCache => ({ version: 2, entries: {} });
+const emptyCache = (): SourceCache => ({ version: 3, entries: {} });
 const result = (name: string, title: string): SourceResult => ({
   sourceName: name,
   profileName: name,
@@ -20,7 +20,7 @@ const result = (name: string, title: string): SourceResult => ({
 describe('per-source sync', () => {
   it('keeps stale data for a failed source while updating another', async () => {
     const oldTime = '2020-01-01T00:00:00.000Z';
-    const cache: SourceCache = { version: 2, entries: {
+    const cache: SourceCache = { version: 3, entries: {
       [sourceKey(scholar)]: { fetchedAt: oldTime, result: result('google-scholar', 'Old Scholar') },
       [sourceKey(semantic)]: { fetchedAt: oldTime, result: result('semantic-scholar', 'Old Semantic') },
     } };
@@ -36,7 +36,7 @@ describe('per-source sync', () => {
   });
 
   it('does not reuse a different profile and still returns available sources', async () => {
-    const cache: SourceCache = { version: 2, entries: {
+    const cache: SourceCache = { version: 3, entries: {
       [sourceKey({ type: 'google-scholar', profileId: 'other' })]: {
         fetchedAt: new Date().toISOString(), result: result('google-scholar', 'Wrong Profile'),
       },
@@ -52,7 +52,7 @@ describe('per-source sync', () => {
   });
 
   it('does not fetch fresh entries and fails when no source is available', async () => {
-    const cache: SourceCache = { version: 2, entries: {
+    const cache: SourceCache = { version: 3, entries: {
       [sourceKey(scholar)]: { fetchedAt: new Date().toISOString(), result: result('google-scholar', 'Cached') },
     } };
     const cached = await syncPublications([scholar], cache, 86_400_000, async () => { throw new Error('should not fetch'); });
@@ -63,7 +63,7 @@ describe('per-source sync', () => {
 
   it('excludes cached profiles removed from the configuration', async () => {
     const fetchedAt = new Date().toISOString();
-    const cache: SourceCache = { version: 2, entries: {
+    const cache: SourceCache = { version: 3, entries: {
       [sourceKey(scholar)]: { fetchedAt, result: result('google-scholar', 'Scholar Paper') },
       [sourceKey(semantic)]: { fetchedAt, result: result('semantic-scholar', 'Semantic Paper') },
     } };
@@ -81,7 +81,7 @@ describe('cache format', () => {
     const dir = await mkdtemp(join(tmpdir(), 'rp-cache-'));
     dirs.push(dir);
     const path = join(dir, 'cache.json');
-    const cache: SourceCache = { version: 2, entries: {
+    const cache: SourceCache = { version: 3, entries: {
       [sourceKey(scholar)]: { fetchedAt: new Date().toISOString(), result: result('google-scholar', 'Saved') },
     } };
     await writeCache(path, cache);

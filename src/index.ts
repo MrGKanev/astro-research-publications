@@ -1,10 +1,13 @@
 import type { AstroIntegration } from 'astro';
 import { syncPublications } from './fetcher.js';
 import { resolveCachePath, readCache, writeCache } from './cache.js';
+import { applyOverrides } from './overrides.js';
+import { enrichCitations } from './citations.js';
 import type { ResearchPublicationsOptions, SourceConfig } from './types.js';
 
-export type { ResearchPublicationsOptions, ScholarData, Publication, CoAuthor, CitationStats, SourceConfig } from './types.js';
+export type { ResearchPublicationsOptions, ScholarData, Publication, PublicationOverride, CoAuthor, CitationStats, SourceConfig } from './types.js';
 export { toBibTeX } from './bibtex.js';
+export { toCslJson } from './csl.js';
 
 const VIRTUAL_MODULE_ID = 'virtual:scholar-data';
 const RESOLVED_ID = '\0' + VIRTUAL_MODULE_ID;
@@ -36,7 +39,13 @@ export default function researchPublications(options: ResearchPublicationsOption
   return {
     name: 'astro-research-publications',
     hooks: {
-      'astro:config:setup': ({ updateConfig, config, logger }) => {
+      'astro:config:setup': ({ updateConfig, injectRoute, config, logger }) => {
+        if (options.dataExports?.json) {
+          injectRoute({ pattern: '/research-publications.json', entrypoint: new URL('./routes/json.js', import.meta.url), prerender: true });
+        }
+        if (options.dataExports?.cslJson) {
+          injectRoute({ pattern: '/research-publications.csl.json', entrypoint: new URL('./routes/csl-json.js', import.meta.url), prerender: true });
+        }
         updateConfig({
           vite: {
             plugins: [{
@@ -51,8 +60,30 @@ export default function researchPublications(options: ResearchPublicationsOption
                 const cache = await readCache(cachePath);
                 const sourceLabels = sources.map(describeSource).join(', ');
                 logger.info(`Loading: ${sourceLabels}`);
-                const { data, cache: nextCache, updated, warnings } = await syncPublications(sources, cache, cacheMaxAgeMs);
-                for (const warning of warnings) logger.warn(warning);
+                const synced = await syncPublications(sources, cache, cacheMaxAgeMs, undefined, options.dedupeByDoi ?? false);
+                let data = synced.data;
+                let nextCache = synced.cache;
+                let updated = synced.updated;
+                let correctedIds = new Set<string>();
+                for (const warning of synced.warnings) logger.warn(warning);
+                if (options.overrides?.length) {
+                  const overridden = applyOverrides(data, options.overrides);
+                  data = overridden.data;
+                  correctedIds = overridden.correctedIds;
+                  for (const warning of overridden.warnings) logger.warn(warning);
+                }
+                if (options.citationTools) {
+                  const enriched = await enrichCitations(data, nextCache, cacheMaxAgeMs, undefined, correctedIds);
+                  data = enriched.data;
+                  nextCache = enriched.cache;
+                  updated ||= enriched.updated;
+                  for (const warning of enriched.warnings) logger.warn(warning);
+                }
+                data.features = {
+                  openAccessLinks: options.openAccessLinks ?? false,
+                  citationTools: options.citationTools ?? false,
+                  dataExports: Boolean(options.dataExports?.json || options.dataExports?.cslJson),
+                };
                 if (updated) await writeCache(cachePath, nextCache);
                 logger.info(`Ready: ${data.publications.length} publications, ${data.stats.totalCitations} total citations.`);
 

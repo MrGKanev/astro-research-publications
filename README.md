@@ -22,6 +22,7 @@ Data is cached locally so repeat builds are fast, and a stale cache is used if a
 - Local JSON cache per source and profile with configurable max-age (default: 24 h)
 - Refreshes healthy sources independently and uses stale data for any source that fails
 - BibTeX download and year/source filters on the publications page
+- Optional DOI-first deduplication, manual corrections, open-access links, citation tools, and JSON exports
 - CSS custom properties for easy theming - no stylesheet overrides required
 - Full TypeScript types exported for `ScholarData`, `Publication`, `CitationStats`, `SourceConfig`, and more
 - Works with Astro 4, 5, 6, and 7
@@ -176,6 +177,33 @@ import ResearchPublications from 'astro-research-publications/components';
 | `sources` | `SourceConfig[]` | - | One or more data sources (see above). Takes precedence over `scholarId`. |
 | `cacheMaxAgeMs` | `number` | `86400000` (24 h) | How long cached data is considered fresh. |
 | `cachePath` | `string` | `.astro/scholar-cache.json` | Path to the per-source cache file, relative to the project root. |
+| `dedupeByDoi` | `boolean` | `false` | Merge matching DOIs even when titles differ; keep conflicting DOIs separate. |
+| `overrides` | `PublicationOverride[]` | `[]` | Correct or hide selected publications after merging. |
+| `openAccessLinks` | `boolean` | `false` | Show open-access and PDF links provided by an OpenAlex source. |
+| `citationTools` | `boolean` | `false` | Enable per-publication BibTeX copying and DOI citation lookup. |
+| `dataExports` | `{ json?: boolean; cslJson?: boolean }` | - | Generate static JSON and/or CSL-JSON endpoints. |
+
+### Optional extras
+
+```js
+researchPublications({
+  sources: [{ type: 'open-alex', authorId: 'A5012823189' }],
+  dedupeByDoi: true,
+  openAccessLinks: true,
+  citationTools: true,
+  dataExports: { json: true, cslJson: true },
+  overrides: [
+    { match: { doi: '10.1234/example' }, title: 'Corrected title', year: 2024 },
+    { match: { id: 'publication-id' }, hide: true },
+  ],
+})
+```
+
+Overrides match by `id`, `doi`, or original `title`. You may combine match fields to narrow the selection. Prefer DOI matches when possible: enabling `dedupeByDoi` gives DOI records DOI-based stable IDs. A hidden publication is removed from the list and exports; source-provided citation statistics remain unchanged. Unmatched overrides produce a build warning. Corrections are applied after deduplication, and the per-source cache remains untouched.
+
+Open-access links come from OpenAlex's best available location. They appear only when an OpenAlex source supplies a link and `openAccessLinks` is enabled. The citation tool requests a publisher-provided BibTeX record through DOI content negotiation for publications with a DOI and caches successful responses. Failed lookups fall back to the plugin's generic BibTeX entry; first builds may take longer when an author has many DOI records. Manually corrected publications use a locally generated citation so the corrections are preserved. The copy button needs JavaScript; the full BibTeX download does not.
+
+`dataExports.json` writes `/research-publications.json` with the merged `ScholarData`. `dataExports.cslJson` writes `/research-publications.csl.json` as a CSL-JSON array. Both are generated at build time, include manual corrections, and are available only when enabled. You can also call `toCslJson(data.publications)` from the package API.
 
 ---
 

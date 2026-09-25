@@ -9,6 +9,10 @@ export interface Publication {
   citationsUrl: string | null;
   doi?: string | null;
   abstract?: string | null;
+  openAccessUrl?: string | null;
+  pdfUrl?: string | null;
+  /** A citation returned by DOI content negotiation, when citationTools is enabled. */
+  bibtex?: string | null;
   /** Which sources contributed this publication, e.g. ['google-scholar', 'semantic-scholar'] */
   sources?: string[];
 }
@@ -42,6 +46,21 @@ export interface ScholarData {
   lastSynced: string;
   /** Which data sources were queried, e.g. ['google-scholar', 'semantic-scholar'] */
   sources: string[];
+  features?: { openAccessLinks: boolean; citationTools: boolean; dataExports: boolean };
+}
+
+export interface PublicationOverride {
+  /** Match one publication by its stable ID, DOI, or original title. */
+  match: { id?: string; doi?: string; title?: string };
+  hide?: boolean;
+  title?: string;
+  authors?: string[];
+  venue?: string;
+  year?: number | null;
+  doi?: string | null;
+  abstract?: string | null;
+  openAccessUrl?: string | null;
+  pdfUrl?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +89,16 @@ export interface ResearchPublicationsOptions {
   cacheMaxAgeMs?: number;
   /** Path to the cache file, relative to the project root. Defaults to .astro/scholar-cache.json */
   cachePath?: string;
+  /** Prefer equal DOIs when merging publications. Defaults to false. */
+  dedupeByDoi?: boolean;
+  /** Local corrections or hidden publications, applied after merging. */
+  overrides?: PublicationOverride[];
+  /** Show OA and PDF links supplied by OpenAlex. Requires an OpenAlex source. */
+  openAccessLinks?: boolean;
+  /** Show a per-publication copyable BibTeX citation and enrich DOI records. */
+  citationTools?: boolean;
+  /** Inject static JSON and/or CSL-JSON endpoints at /research-publications.*. */
+  dataExports?: { json?: boolean; cslJson?: boolean };
 }
 
 // ---------------------------------------------------------------------------

@@ -52,7 +52,11 @@ const bibtexUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(toBibTeX(s
           <a class="rp-export" href={bibtexUrl} download="publications.bib">Download BibTeX</a>
         )}
       </div>
-      <PublicationsList publications={publications} />
+      <PublicationsList
+        publications={publications}
+        openAccessLinks={scholarData.features?.openAccessLinks ?? false}
+        citationTools={scholarData.features?.citationTools ?? false}
+      />
       <p class="rp-empty" hidden>No publications match these filters.</p>
       <p class="rp-showing" aria-live="polite">Showing <span class="rp-visible-count">{publications.length}</span> of {totalCount} publications</p>
       <p class="rp-synced">
@@ -111,6 +115,20 @@ const bibtexUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(toBibTeX(s
   for (const root of document.querySelectorAll<HTMLElement>('.rp-root')) {
     if (root.dataset.rpInitialized) continue;
     root.dataset.rpInitialized = 'true';
+    if (navigator.clipboard?.writeText) {
+      for (const button of root.querySelectorAll<HTMLButtonElement>('.rp-citation-copy')) {
+        button.hidden = false;
+        button.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(button.dataset.rpBibtex ?? '');
+            button.textContent = 'Copied!';
+            window.setTimeout(() => { button.textContent = 'Copy BibTeX'; }, 2000);
+          } catch {
+            button.textContent = 'Copy failed';
+          }
+        });
+      }
+    }
     const filters = root.querySelector<HTMLElement>('.rp-filters');
     const yearSelect = root.querySelector<HTMLSelectElement>('.rp-year-filter');
     const sourceSelect = root.querySelector<HTMLSelectElement>('.rp-source-filter');

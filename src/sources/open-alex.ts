@@ -11,6 +11,8 @@ interface OAWork {
   primary_location?: { source?: { display_name?: string } } | null;
   doi?: string | null;
   abstract_inverted_index?: Record<string, number[]> | null;
+  best_oa_location?: { landing_page_url?: string | null; pdf_url?: string | null } | null;
+  open_access?: { oa_url?: string | null } | null;
   id: string;
 }
 
@@ -57,7 +59,7 @@ export async function fetchOpenAlex(authorId: string, mailto?: string): Promise<
   // Paginate through all works
   let works: OAWork[] = [];
   let cursor = '*';
-  const fields = 'title,publication_year,cited_by_count,authorships,primary_location,doi,abstract_inverted_index,id';
+  const fields = 'title,publication_year,cited_by_count,authorships,primary_location,doi,abstract_inverted_index,best_oa_location,open_access,id';
   while (true) {
     const page = await fetchJSON<{ results: OAWork[]; meta: { next_cursor?: string } }>(
       `${BASE}/works?filter=authorships.author.id:${encodedId}&per_page=200&cursor=${encodeURIComponent(cursor)}&select=${fields}`,
@@ -82,6 +84,8 @@ export async function fetchOpenAlex(authorId: string, mailto?: string): Promise<
       citationsUrl: null,
       doi,
       abstract: reconstructAbstract(w.abstract_inverted_index),
+      openAccessUrl: w.open_access?.oa_url ?? w.best_oa_location?.landing_page_url ?? null,
+      pdfUrl: w.best_oa_location?.pdf_url ?? null,
       sources: ['open-alex'],
     };
   });

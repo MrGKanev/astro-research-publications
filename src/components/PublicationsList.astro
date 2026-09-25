@@ -1,11 +1,14 @@
 ---
 import type { Publication } from '../types.js';
+import { toBibTeX } from 'astro-research-publications';
 
 interface Props {
   publications: Publication[];
+  openAccessLinks?: boolean;
+  citationTools?: boolean;
 }
 
-const { publications } = Astro.props;
+const { publications, openAccessLinks = false, citationTools = false } = Astro.props;
 
 const SOURCE_LABELS: Record<string, string> = {
   'google-scholar':   'GS',
@@ -54,6 +57,16 @@ const SOURCE_LABELS: Record<string, string> = {
               ))}
             </div>
             {pub.venue && <div class="rp-venue">{pub.venue}</div>}
+            {openAccessLinks && (pub.openAccessUrl || pub.pdfUrl) && (
+              <div class="rp-access-links">
+                {pub.openAccessUrl && /^https?:\/\//i.test(pub.openAccessUrl) && (
+                  <a href={pub.openAccessUrl} target="_blank" rel="noopener noreferrer">Open access</a>
+                )}
+                {pub.pdfUrl && /^https?:\/\//i.test(pub.pdfUrl) && (
+                  <a href={pub.pdfUrl} target="_blank" rel="noopener noreferrer">PDF</a>
+                )}
+              </div>
+            )}
             {pub.sources && pub.sources.length > 0 && (
               <div class="rp-sources">
                 {pub.sources.map((s) => (
@@ -78,6 +91,9 @@ const SOURCE_LABELS: Record<string, string> = {
                   {pub.abstract && <p class="rp-abstract">{pub.abstract}</p>}
                 </div>
               </details>
+            )}
+            {citationTools && (
+              <button type="button" class="rp-citation-copy" data-rp-bibtex={toBibTeX([pub])} hidden>Copy BibTeX</button>
             )}
           </td>
           <td class="rp-td rp-td-center">{pub.year ?? '-'}</td>
@@ -162,6 +178,10 @@ const SOURCE_LABELS: Record<string, string> = {
   .rp-author-link { color: inherit; text-decoration: none; }
   .rp-author-link:hover { color: var(--rp-accent, #d8613c); text-decoration: underline; }
   .rp-venue { font-size: 0.75rem; color: var(--rp-text-secondary, #888); font-style: italic; }
+  .rp-access-links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.3rem; font-size: 0.75rem; }
+  .rp-access-links a { color: var(--rp-accent, #d8613c); text-decoration: underline; text-underline-offset: 2px; }
+  .rp-citation-copy { margin-top: 0.45rem; padding: 0; border: 0; background: none; color: var(--rp-accent, #d8613c); font: inherit; font-size: 0.75rem; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .rp-citation-copy[hidden] { display: none; }
 
   .rp-sources { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
 

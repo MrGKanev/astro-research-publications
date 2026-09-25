@@ -30,9 +30,9 @@ function deriveProfileId(sources: SourceConfig[]): string {
   return 'unknown';
 }
 
-export async function fetchPublications(sources: SourceConfig[]): Promise<ScholarData> {
+export async function fetchPublications(sources: SourceConfig[], dedupeByDoi = false): Promise<ScholarData> {
   const results = await Promise.all(sources.map(fetchSource));
-  return mergeResults(results, deriveProfileId(sources));
+  return mergeResults(results, deriveProfileId(sources), dedupeByDoi);
 }
 
 export interface SyncResult {
@@ -48,6 +48,7 @@ export async function syncPublications(
   cache: SourceCache,
   maxAgeMs: number,
   fetchOne: (source: SourceConfig) => Promise<SourceResult> = fetchSource,
+  dedupeByDoi = false,
 ): Promise<SyncResult> {
   const entries = { ...cache.entries };
   let updated = false;
@@ -85,10 +86,10 @@ export async function syncPublications(
     throw new Error(`[astro-research-publications] No publication data available. ${warnings.join(' | ')}`);
   }
 
-  const data = mergeResults(available.map(({ entry }) => entry.result), deriveProfileId(available.map(({ source }) => source)));
+  const data = mergeResults(available.map(({ entry }) => entry.result), deriveProfileId(available.map(({ source }) => source)), dedupeByDoi);
   // A mixed result is only as current as its oldest contributing source.
   data.lastSynced = new Date(Math.min(...available.map(({ entry }) => Date.parse(entry.fetchedAt)))).toISOString();
-  return { data, cache: { version: 2, entries }, updated, warnings };
+  return { data, cache: { version: 3, entries, citations: cache.citations }, updated, warnings };
 }
 
 /** @deprecated Use `fetchPublications([{ type: 'google-scholar', profileId }])` instead. */

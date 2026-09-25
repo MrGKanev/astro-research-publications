@@ -8,6 +8,7 @@ function escapeValue(value: string): string {
 /** Export publications as stable, generic BibTeX entries. */
 export function toBibTeX(publications: Publication[]): string {
   return publications.map((publication) => {
+    if (publication.bibtex?.trim()) return publication.bibtex.trim();
     const fields: [string, string | number | null | undefined][] = [
       ['title', publication.title],
       ['author', publication.authors.join(' and ')],
@@ -19,6 +20,7 @@ export function toBibTeX(publications: Publication[]): string {
     const lines = fields
       .filter(([, value]) => value !== null && value !== undefined && value !== '')
       .map(([name, value]) => `  ${name} = {${escapeValue(String(value))}}`);
-    return `@misc{rp-${publication.id},\n${lines.join(',\n')}\n}`;
+    const key = publication.id.replace(/[^a-zA-Z0-9:_-]/g, '-') || 'publication';
+    return `@misc{rp-${key},\n${lines.join(',\n')}\n}`;
   }).join('\n\n') + (publications.length ? '\n' : '');
 }

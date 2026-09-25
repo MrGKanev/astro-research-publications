@@ -46,41 +46,66 @@ export function computeI10Index(counts: number[]): number {
   return counts.filter((c) => c >= 10).length;
 }
 
-function mergePublications(allResults: SourceResult[]): Publication[] {
-  // Map from normalised title → merged Publication
-  const merged = new Map<string, Publication>();
-  // Inverted index: word → set of existing normalised keys that contain it
-  // Limits fuzzy candidates to titles sharing at least one word, making dedup O(n·k) vs O(n²)
-  const wordIndex = new Map<string, Set<string>>();
+export function normaliseDoi(doi: string | null | undefined): string {
+  return (doi ?? '').trim().replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '').replace(/^doi:/i, '').toLowerCase();
+}
+
+function mergePublications(allResults: SourceResult[], dedupeByDoi: boolean): Publication[] {
+  const merged: Publication[] = [];
+  const titleIndex = new Map<string, Set<number>>();
+  const wordIndex = new Map<string, Set<number>>();
+  const doiIndex = new Map<string, number>();
+  const titleKeys: string[] = [];
 
   for (const result of allResults) {
     for (const pub of result.publications) {
       const key = normaliseTitle(pub.title);
       if (!key) continue;
 
-      // Exact match first (fast path), then fuzzy match restricted to candidates sharing a word
-      let matchKey = merged.has(key) ? key : undefined;
-      if (!matchKey) {
-        const candidates = new Set<string>();
+      const doi = normaliseDoi(pub.doi);
+      const compatible = (index: number) => !dedupeByDoi || !doi || !normaliseDoi(merged[index].doi) || normaliseDoi(merged[index].doi) === doi;
+      let matchIndex = dedupeByDoi && doi ? doiIndex.get(doi) : undefined;
+      if (matchIndex === undefined) {
+        const exact = titleIndex.get(key);
+        matchIndex = exact ? [...exact].find(compatible) : undefined;
+      }
+      if (matchIndex === undefined) {
+        const candidates = new Set<number>();
         for (const word of key.split(' ').filter(Boolean)) {
           for (const candidate of wordIndex.get(word) ?? []) candidates.add(candidate);
         }
-        for (const candidateKey of candidates) {
-          if (jaccardSimilarity(key, candidateKey) >= FUZZY_THRESHOLD) {
-            matchKey = candidateKey;
+        for (const candidate of candidates) {
+          if (compatible(candidate) && jaccardSimilarity(key, titleKeys[candidate]) >= FUZZY_THRESHOLD) {
+            matchIndex = candidate;
             break;
           }
         }
       }
 
-      const existing = matchKey ? merged.get(matchKey) : undefined;
+      const existing = matchIndex === undefined ? undefined : merged[matchIndex];
       if (!existing) {
-        merged.set(key, { ...pub });
+        const stableId = dedupeByDoi && doi
+          ? createHash('sha1').update(`doi:${doi}`).digest('hex').slice(0, 16)
+          : pub.id;
+        const index = merged.push({ ...pub, id: stableId }) - 1;
+        titleKeys[index] = key;
+        if (!titleIndex.has(key)) titleIndex.set(key, new Set());
+        titleIndex.get(key)!.add(index);
         for (const word of key.split(' ').filter(Boolean)) {
           if (!wordIndex.has(word)) wordIndex.set(word, new Set());
-          wordIndex.get(word)!.add(key);
+          wordIndex.get(word)!.add(index);
         }
+        if (doi) doiIndex.set(doi, index);
         continue;
+      }
+
+      if (matchIndex !== undefined) {
+        if (!titleIndex.has(key)) titleIndex.set(key, new Set());
+        titleIndex.get(key)!.add(matchIndex);
+        for (const word of key.split(' ').filter(Boolean)) {
+          if (!wordIndex.has(word)) wordIndex.set(word, new Set());
+          wordIndex.get(word)!.add(matchIndex);
+        }
       }
 
       // Merge: prefer higher citation count
@@ -91,7 +116,10 @@ function mergePublications(allResults: SourceResult[]): Publication[] {
 
       // Fill in missing fields from other sources
       if (!existing.doi && pub.doi) existing.doi = pub.doi;
+      if (doi && matchIndex !== undefined) doiIndex.set(doi, matchIndex);
       if (!existing.abstract && pub.abstract) existing.abstract = pub.abstract;
+      if (!existing.openAccessUrl && pub.openAccessUrl) existing.openAccessUrl = pub.openAccessUrl;
+      if (!existing.pdfUrl && pub.pdfUrl) existing.pdfUrl = pub.pdfUrl;
       if (!existing.year && pub.year) existing.year = pub.year;
       if (existing.authors.length === 0 && pub.authors.length > 0) existing.authors = pub.authors;
       if (!existing.venue && pub.venue) existing.venue = pub.venue;
@@ -107,7 +135,7 @@ function mergePublications(allResults: SourceResult[]): Publication[] {
   }
 
   // Sort by year descending, then by citations descending
-  return Array.from(merged.values()).sort((a, b) => {
+  return merged.sort((a, b) => {
     if ((b.year ?? 0) !== (a.year ?? 0)) return (b.year ?? 0) - (a.year ?? 0);
     return b.citations - a.citations;
   });
@@ -194,8 +222,8 @@ function mergeCoAuthors(results: SourceResult[]): CoAuthor[] {
   return coAuthors;
 }
 
-export function mergeResults(results: SourceResult[], profileId: string): ScholarData {
-  const publications = mergePublications(results);
+export function mergeResults(results: SourceResult[], profileId: string, dedupeByDoi = false): ScholarData {
+  const publications = mergePublications(results, dedupeByDoi);
 
   // Profile name: prefer Google Scholar, then first available
   const profileName =

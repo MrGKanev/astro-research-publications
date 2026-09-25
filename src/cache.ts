@@ -10,8 +10,9 @@ export interface SourceCacheEntry {
 }
 
 export interface SourceCache {
-  version: 2;
+  version: 3;
   entries: Record<string, SourceCacheEntry>;
+  citations?: Record<string, { fetchedAt: string; bibtex: string }>;
 }
 
 export function sourceKey(source: SourceConfig): string {
@@ -34,9 +35,9 @@ export function resolveCachePath(projectRoot: URL, relativePath: string): string
 export async function readCache(cachePath: string): Promise<SourceCache> {
   try {
     const parsed: unknown = JSON.parse(await readFile(cachePath, 'utf-8'));
-    if (typeof parsed !== 'object' || parsed === null || !('version' in parsed) || parsed.version !== 2 ||
+    if (typeof parsed !== 'object' || parsed === null || !('version' in parsed) || parsed.version !== 3 ||
         !('entries' in parsed) || typeof parsed.entries !== 'object' || parsed.entries === null || Array.isArray(parsed.entries)) {
-      return { version: 2, entries: {} };
+      return { version: 3, entries: {} };
     }
     const entries: Record<string, SourceCacheEntry> = {};
     for (const [key, value] of Object.entries(parsed.entries)) {
@@ -52,9 +53,18 @@ export async function readCache(cachePath: string): Promise<SourceCache> {
             'citations' in publication && typeof publication.citations === 'number')) continue;
       entries[key] = value as SourceCacheEntry;
     }
-    return { version: 2, entries };
+    const citations: NonNullable<SourceCache['citations']> = {};
+    if ('citations' in parsed && typeof parsed.citations === 'object' && parsed.citations !== null && !Array.isArray(parsed.citations)) {
+      for (const [doi, value] of Object.entries(parsed.citations)) {
+        if (typeof value === 'object' && value !== null && 'fetchedAt' in value && typeof value.fetchedAt === 'string' &&
+            Number.isFinite(Date.parse(value.fetchedAt)) && 'bibtex' in value && typeof value.bibtex === 'string') {
+          citations[doi] = { fetchedAt: value.fetchedAt, bibtex: value.bibtex };
+        }
+      }
+    }
+    return { version: 3, entries, ...(Object.keys(citations).length ? { citations } : {}) };
   } catch {
-    return { version: 2, entries: {} };
+    return { version: 3, entries: {} };
   }
 }
 
