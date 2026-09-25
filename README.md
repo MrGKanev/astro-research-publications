@@ -286,3 +286,9 @@ import type { ScholarData, Publication, CitationStats, CoAuthor, SourceConfig } 
 | CAPTCHA risk | Yes | No | No | No |
 
 For maximum data richness and reliability, combining Google Scholar with Semantic Scholar or OpenAlex is recommended.
+
+---
+
+## Releasing
+
+Update the `version` in `package.json` and commit it before creating a release tag. The tag must match that version exactly (for example, `0.4.1` for version `0.4.1`). npm does not allow a published version to be reused. The publish workflow checks both the tag and the npm registry before running the build and publish steps.

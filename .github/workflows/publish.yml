@@ -19,9 +19,14 @@ jobs:
 
       - uses: actions/setup-node@v6.0.0
         with:
-          node-version-file: 'package.json'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
+
+      - name: Verify release tag and npm version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/check-release.mjs
 
       - run: pnpm install --frozen-lockfile
 
